@@ -1,5 +1,6 @@
 *.csv
 *.mseed
+*.tremvlog
+tremv_config.json
 mseed/
 tremv_output/
-*.tremvlog
