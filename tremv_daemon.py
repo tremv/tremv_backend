@@ -53,10 +53,10 @@ def apply_bandpass_filters(traces, filters):
     return(passbands)
 
 
+""" Applies rsam to a single trace.
+    NOTE: This function assumes the given trace is 1 minute worth of data.
+"""
 def trace_average(trace):
-    """ Applies rsam to a single trace.
-        NOTE: This function assumes the given trace is 1 minute worth of data.
-    """
     value_sum = 0
     pts_per_minute = int(trace.stats.sampling_rate * 60)
 
@@ -88,9 +88,9 @@ def rsam_processing(per_filter_filtered_stations, filters, station_names, receiv
     return(result)
 
 
+""" Creates output files...
+"""
 def write_tremvlog_file(rsam_results, filters, station_names, starttime):
-    """ Creates output files...
-    """
     print("writing to file...")
     starttime_datetime = starttime.datetime
     path = common.generate_output_path(starttime_datetime)
@@ -122,6 +122,55 @@ def write_tremvlog_file(rsam_results, filters, station_names, starttime):
         output.close()
     print("wrote to tremvlog!")
     print()
+
+
+""" Accumulate traces in a station that is found in a directory, handle gaps in
+    data and append the output to a list of stations.
+"""
+def read_mseed_from_dir(path):
+    stations = obspy.Stream()
+    files = os.listdir(os.getcwd() + "/" + path)
+
+    for f in files:
+        station_in = obspy.read(path + "/" + f)
+        trace_acc = station_in[0]
+
+        #starts from one so we can splice the traces together with the + operator
+        for i in range(1, len(station_in)):
+            trace = station_in[i]
+            trace_acc = trace_acc + trace
+
+        #This creates a Stream object with one trace object that is gapless
+        gapless_stream = trace_acc.split()
+        stations.append(gapless_stream[0])
+
+    return(stations)
+
+
+#TODO: this might not be complete?
+def write_to_mseed(stations, timestamp):
+    path = common.generate_output_path(timestamp)
+
+    if(os.path.exists(path) == False):
+        os.makedirs(path)
+
+    ts_str = str(timestamp)
+    filedate = ts_str[0:4] + "." + ts_str[5:7] + "." + ts_str[8:10]
+    filename = filedate + "_pp.mseed"
+    file_path = path + filename
+
+    if(os.path.exists(file_path)):
+        stations_pp = obspy.read(file_path)
+
+        for s_pp in stations_pp:
+            for s in stations:
+                if(s_pp.stats["station"] == s.stats["station"]):
+                    s_pp = s_pp + s
+
+        stations_pp.write(file_path, format="MSEED")
+
+    else:
+        stations.write(file_path, format="MSEED")
 
 
 def main():
@@ -162,6 +211,7 @@ def main():
         rsam_results = rsam_processing(per_filter_filtered_stations, filters, station_names, received_station_names)
 
         write_tremvlog_file(rsam_results, filters, station_names, starttime)
+        write_to_mseed(pre_processed_stations, starttime)#Done so the pre processed date can be filtered with different filters at a later date.
 
         print("Rsam calculation duration: " + str(UTCDateTime() - rsam_st))
         print("Total duration: " + str(UTCDateTime() - starttime))
@@ -174,5 +224,4 @@ def main():
             config = common.read_tremv_config(config_filename)
             config_stamp = stamp
 
-#TODO: run process as daemon?
 main()
