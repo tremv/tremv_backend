@@ -111,27 +111,30 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
             f = open(file_path, "w")
 
             for j in range(0, len(station_names)):
-                output.write(station_names[j])
+                f.write(station_names[j])
                 if(j == len(station_names)-1):
-                    output.write("\n")
+                    f.write("\n")
                 else:
-                    output.write(delimeter)
+                    f.write(delimeter)
 
-            minute_of_day = starttime.minute + starttime.hour * 60
+            minute_of_day = timestamp.minute + timestamp.hour * 60
+
             #Fill in empty values in the file if it isn't created at midnight.
             for j in range(0, minute_of_day-1):
                 for k in range(0, len(station_names)):
-                    output.write(str(0.0))
+                    f.write(str(0.0))
                     if(k == len(station_names)-1):
-                        output.write("\n")
+                        f.write("\n")
                     else:
-                        output.write(delimeter)
+                        f.write(delimeter)
             f.close()
 
-        output = open(file_path, "r+")
+        tremvlog_file = open(file_path, "r")
 
         station_lists_differ = False
-        station_names_in_file = output.readline().split()
+        station_names_in_file = tremvlog_file.readline().split()
+
+        tremvlog_file.close()
 
         #figure out if there is difference between the station_names list we provide and the one in the file...
         for s in station_names:
@@ -139,10 +142,13 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
                 station_list_diff = True
                 break
 
+
         #Since they differ we will have to read the whole file in and re-write it:
-        if(station_list_differ == True):
+        if(station_lists_differ == True):
             data_in_file = common.read_tremvlog_file(file_path)
             minute_count = len(data_in_file[station_names_in_file[0]])
+
+            output = open(file_path, "w")
 
             #account for stations that are not present in the file and fill those with zeroes
             for j in range(0, len(station_names)):
@@ -154,10 +160,6 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
 
                     for k in range(0, minute_count):
                         data_in_file[name].append(0.0)
-
-            #clear the file
-            output.seek(0)
-            output.truncate()
 
             for j in range(0, len(station_names_in_file)):
                 output.write(station_names_in_file[j])
@@ -176,7 +178,10 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
                     else:
                         output.write(delimeter)
 
+            output.close()
+
         #do the actual appending of new data...
+        output = open(file_path, "a")
         #check file timestamp
         minutes_since_last_write = int(round((time.time() - os.path.getmtime(file_path)) / 60))
 
@@ -191,8 +196,9 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
 
         for j in range(0, len(station_names_in_file)):
             name = station_names_in_file[j]
-            if(name in rsam_results):
-                output.write(str(rsam_results[i][name]))
+            result_dict = rsam_results[i]
+            if(name in result_dict):
+                output.write(str(result_dict[name]))
             else:
                 output.write(str(0.0))
 
@@ -291,7 +297,7 @@ def main():
         data_starttime = fetch_starttime - 60
 
         debug_log = open_debug_log(data_starttime)
-        debug_log.write("Fetch start time: " + str(fetch_starttime))
+        debug_log.write("Fetch start time: " + str(fetch_starttime) + "\n")
         debug_log.write("Data fetch duration: ")
 
         #TODO:Maybe the station parameter(the one after "VI") could be longer than 3 chars???
@@ -316,7 +322,7 @@ def main():
 
         write_tremvlog_file(rsam_results, filters, station_names, data_starttime)
         #TODO: this is currently broken because of obspy or something :(
-        write_to_mseed(pre_processed_stations, data_starttime)#Done so the pre processed data can be filtered with different filters at a later date.
+        #write_to_mseed(pre_processed_stations, data_starttime)#Done so the pre processed data can be filtered with different filters at a later date.
 
         datestr = str(data_starttime.year) + "." + str(data_starttime.month) + "." + str(data_starttime.day)
         debug_log.write("Wrote to files " + datestr + " at: " + str(UTCDateTime()) + "\n")
