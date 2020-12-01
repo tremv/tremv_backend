@@ -90,6 +90,7 @@ def rsam_processing(per_filter_filtered_stations, filters, station_names, receiv
 
 """ Creates output files...
 """
+#TODO: make it handle station reordering
 def write_tremvlog_file(rsam_results, filters, station_names, starttime):
     delimeter = " "
     starttime_datetime = starttime.datetime
@@ -237,9 +238,8 @@ def main():
         fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
 
-        print(str(fetch_starttime))
-
         debug_log = open_debug_log(data_starttime)
+        debug_log.write("Fetch start time: " + str(fetch_starttime))
         debug_log.write("Data fetch duration: ")
 
         #TODO:Maybe the station parameter(the one after "VI") could be longer than 3 chars???

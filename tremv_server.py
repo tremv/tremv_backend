@@ -4,7 +4,7 @@ import sys
 import datetime
 import tremv_common as common
 
-class backend(object):
+class server(object):
     def __init__(self):
         self.config_stamp = 0
         self.config_filename = "tremv_config.json"
@@ -80,12 +80,12 @@ class backend(object):
             if(f in self.config["filters"]):
                 tremvlog_filename = common.generate_tremvlog_filename(date, f)
                 path = folder_path + tremvlog_filename
-                rsam_results = common.read_tremvlog_file(path, station_names)
+                rsam_results = common.read_tremvlog_file(path)
 
                 station_data = {}
 
                 for name in station_names:
-                    if(name in self.config["station_names"]):
+                    if(name in self.config["station_names"] and name in rsam_results):
                         station_data[name] = rsam_results[name][-1]
                     else:
                         station_data[name] = 0.0
@@ -127,12 +127,12 @@ class backend(object):
             if(f in self.config["filters"]):
                 tremvlog_filename = common.generate_tremvlog_filename(date, f)
                 path = folder_path + tremvlog_filename
-                rsam_results = common.read_tremvlog_file(path, station_names)
+                rsam_results = common.read_tremvlog_file(path)
 
                 station_data = {}
 
                 for name in station_names:
-                    if(name in self.config["station_names"]):
+                    if(name in self.config["station_names"] and name in rsam_results):
                         station_data[name] = rsam_results[name]
                     else:
                         station_data[name] = [0.0 for x in range(0, minute_of_day)]
@@ -150,4 +150,4 @@ if(__name__ == "__main__"):
 
     cherrypy.server.socket_host = "0.0.0.0"
     cherrypy.server.socket_port = int(sys.argv[1])
-    cherrypy.quickstart(backend())
+    cherrypy.quickstart(server())

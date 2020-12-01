@@ -41,46 +41,21 @@ def parse_isoformat_to_datetime(date_str):
 
 """ Reads in a tremvlog file and returns a dictionary where the keys are the station names.
 """
-def read_tremvlog_file(filename, station_names):
+def read_tremvlog_file(filename):
     result = {}
-
-    for name in station_names:
-        result[name] = []
 
     if(os.path.exists(filename)):
         input_file = open(filename, "r")
-        lines = input_file.readlines()
-        station_names_in_file = lines[0].split()
+        station_names_in_file = input_file.readline().split()
 
-        prev_minute = 0
+        for name in station_names_in_file:
+            result[name] = []
 
-        for i in range(1, len(lines), 2):#step size is 2, because then we can process lines 2 at a time, because there is always a timestamp and then values
-            timestamp = parse_isoformat_to_datetime(lines[i].rstrip())
-            minute_of_day = timestamp.hour*60 + timestamp.minute
+        for line in input_file.readlines():
+            values = line.split()
 
-            #NOTE:-1 because we usually have a delta of 1, but we would like to input zeroes in place of the missing values
-            minute_delta = minute_of_day - prev_minute - 1
-
-            #fills in missing data
-            for j in range(0, minute_delta):
-                for name in station_names:
-                    if(name in station_names_in_file):
-                        result[name].append(0.0)
-
-            values = lines[i+1].split()
-
-            for j in range(0, len(values)):
-                if(station_names_in_file[j] in station_names):
-                    value = float(values[j])
-                    result[station_names_in_file[j]].append(value)
-
-            prev_minute = minute_of_day
-        
-        input_file.close()
-    else:
-        date = datetime.datetime.now()
-        for name in station_names:
-            for i in range(0, date.hour * 60 + date.minute):
-                result[name].append(0.0)
+            for i in range(0, len(station_names_in_file)):
+                name = station_names_in_file[i]
+                result[name].append(values[i])
 
     return(result)
