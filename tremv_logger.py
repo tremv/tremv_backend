@@ -87,30 +87,25 @@ def rsam_processing(per_filter_filtered_stations, filters, station_names, receiv
 
     return(result)
 
-
+#TODO: clean up this function a little bit perhaps?
 """ Creates output files...
 """
-#TODO: make it handle station reordering
-def write_tremvlog_file(rsam_results, filters, station_names, starttime):
+def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
     delimeter = " "
-    starttime_datetime = starttime.datetime
-    path = common.logger_output_path(starttime_datetime)
+    path = common.logger_output_path(timestamp)
 
     if(os.path.exists(path) == False):
         os.makedirs(path)
 
+    #TODO: rename i to filter index
     for i in range(0, len(filters)):
-        filename = common.generate_tremvlog_filename(starttime_datetime, filters[i])
+        filename = common.generate_tremvlog_filename(timestamp, filters[i])
         file_path = path + filename
-        file_exists = os.path.exists(file_path)
-
-        output = open(file_path, "a")
-
-        #TODO:  fill in values prior to the time that we create this file.
-        #       for example if we create it at 14:00, then everything before
-        #       that should be filled with zeroes...
+        file_exists = os.path.exits(file_path)
 
         if(file_exists == False):
+            f = open(file_path, "w")
+
             for j in range(0, len(station_names)):
                 output.write(station_names[j])
                 if(j == len(station_names)-1):
@@ -127,28 +122,81 @@ def write_tremvlog_file(rsam_results, filters, station_names, starttime):
                         output.write("\n")
                     else:
                         output.write(delimeter)
+            f.close()
 
+        output = open(file_path, "r+")
+
+        station_lists_differ = False
+        station_names_in_file = output.readline().split()
+
+        #figure out if there is difference between the station_names list we provide and the one in the file...
+        for s in station_names:
+            if(s not in station_names_in_file):
+                station_list_diff = True
+                break
+
+        #Since they differ we will have to read the whole file in and re-write it:
+        if(station_list_differ == True):
+            data_in_file = common.read_tremvlog_file(file_path)
+            minute_count = len(data_in_file[station_names_in_file[0]])
+
+            #account for stations that are not present in the file and fill those with zeroes
+            for j in range(0, len(station_names)):
+                name = station_names[j]
+
+                if(name not in station_names_in_file):
+                    station_names_in_file.insert(j, name)
+                    data_in_file[name] = []
+
+                    for k in range(0, minute_count):
+                        data_in_file[name].append(0.0)
+
+            #clear the file
+            output.seek(0)
+            output.truncate()
+
+            for j in range(0, len(station_names_in_file)):
+                output.write(station_names_in_file[j])
+                if(j == len(station_names)-1):
+                    output.write("\n")
+                else:
+                    output.write(delimeter)
+
+            for j in range(0, minute_count):
+                for k in range(0, len(station_names_in_file)):
+                    name = station_names_in_file[k]
+                    output.write(data_in_file[name][j])
+
+                    if(k == len(station_names_in_file)-1):
+                        output.write("\n")
+                    else:
+                        output.write(delimeter)
+
+        #do the actual appending of new data...
         #check file timestamp
         minutes_since_last_write = int(round((time.time() - os.path.getmtime(file_path)) / 60))
 
         #fill in missing data
         for j in range(0, minutes_since_last_write-1):
-            for k in range(0, len(station_names)):
+            for k in range(0, len(station_names_in_file)):
                 output.write(str(0.0))
-                if(k == len(station_names)-1):
+                if(k == len(station_names_in_file)-1):
                     output.write("\n")
                 else:
                     output.write(delimeter)
 
-        for j in range(0, len(station_names)):
-            name = station_names[j]
-            output.write(str(rsam_results[i][name]))
+        for j in range(0, len(station_names_in_file)):
+            name = station_names_in_file[j]
+            if(name in rsam_results):
+                output.write(str(rsam_results[i][name]))
+            else:
+                output.write(str(0.0))
 
-            if(j == len(station_names)-1):
+            if(j == len(station_names_in_file)-1):
                 output.write("\n")
             else:
                 output.write(delimeter)
- 
+
         output.close()
 
 
