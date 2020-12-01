@@ -105,7 +105,7 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
     for i in range(0, len(filters)):
         filename = common.generate_tremvlog_filename(timestamp, filters[i])
         file_path = path + filename
-        file_exists = os.path.exits(file_path)
+        file_exists = os.path.exists(file_path)
 
         if(file_exists == False):
             f = open(file_path, "w")
