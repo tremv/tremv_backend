@@ -91,9 +91,11 @@ def rsam_processing(per_filter_filtered_stations, filters, station_names, receiv
 """ Creates output files...
 """
 def write_tremvlog_file(rsam_results, filters, station_names, starttime):
-    print("writing to file...")
+    #TODO:  check timestamp of file when writing, to see if we have missed
+    #       any minutes for the current one
+    #TODO:  write to a log file of when this happened!
     starttime_datetime = starttime.datetime
-    path = common.generate_output_path(starttime_datetime)
+    path = common.logger_output_path(starttime_datetime)
 
     if(os.path.exists(path) == False):
         os.makedirs(path)
@@ -123,8 +125,6 @@ def write_tremvlog_file(rsam_results, filters, station_names, starttime):
                 output.write(str(rsam_results[i][name])+" ")
  
         output.close()
-    print("wrote to tremvlog!")
-    print()
 
 
 """ Accumulate traces in a station that is found in a directory, handle gaps in
@@ -153,7 +153,7 @@ def read_mseed_from_dir(path):
 """ Writes out preprocessed station data(without filtering) to a miniseed file for the given date.
 """
 def write_to_mseed(stations, timestamp):
-    path = common.generate_output_path(timestamp)
+    path = common.logger_output_path(timestamp)
 
     if(os.path.exists(path) == False):
         os.makedirs(path)
@@ -192,7 +192,6 @@ def main():
 
     while(True):
         print("Sleeping until next minute.")
-
         #NOTE:  This makes it so the sleep time is the duration from now to the next minute.
         #       Thus calculations happen every minute, according to the system clock(assuming calculations take less than a minute).
         #       Would use time.time_ns() but it is only available in python 3.7 and up.
@@ -200,11 +199,9 @@ def main():
         time.sleep(sleeptime_in_sec)
 
         starttime = UTCDateTime()
-        print("Fetching data...")
         #TODO:Maybe the station parameter(the one after "VI") could be longer than 3 chars???
         received_stations = seedlink_connection.get_waveforms(config["network"], "???", "??", "HHZ", starttime - 60, starttime)
-        print("Fetch duration: " + str(UTCDateTime() - starttime))
-        print()
+        daemon_log.write("Fetch duration: " + str(UTCDateTime() - starttime) + "\n")
 
         station_names = config["station_names"]
 
@@ -220,12 +217,14 @@ def main():
 
         rsam_results = rsam_processing(per_filter_filtered_stations, filters, station_names, received_station_names)
 
+        daemon_log.write("Rsam calculation duration: " + str(UTCDateTime() - rsam_st) + "\n")
+        daemon_log.write("Total duration: " + str(UTCDateTime() - starttime) + "\n")
+
         write_tremvlog_file(rsam_results, filters, station_names, starttime)
         write_to_mseed(pre_processed_stations, starttime)#Done so the pre processed data can be filtered with different filters at a later date.
 
-        print("Rsam calculation duration: " + str(UTCDateTime() - rsam_st))
-        print("Total duration: " + str(UTCDateTime() - starttime))
-        print()
+        daemon_log.write("Wrote to file at: " + str(UTCDateTime()) + "\n")
+        daemon_log.write("\n")
 
         #reload the config file if it has changed
         stamp = os.stat(config_filename).st_mtime

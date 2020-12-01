@@ -74,7 +74,7 @@ class backend(object):
 
         #NOTE: Reading the entire file in for now. Prehaps this can be made more efficient via seeking in the file or something...
         date = datetime.datetime.now()
-        folder_path = common.generate_output_path(date)
+        folder_path = common.logger_output_path(date)
 
         for f in filters:
             if(f in self.config["filters"]):
@@ -121,7 +121,7 @@ class backend(object):
         date = datetime.datetime(query["date"]["year"], query["date"]["month"], query["date"]["day"])
         minute_of_day = (date.hour * 60) + date.minute
 
-        folder_path = common.generate_output_path(date)
+        folder_path = common.logger_output_path(date)
 
         for f in filters:
             if(f in self.config["filters"]):

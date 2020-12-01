@@ -11,8 +11,8 @@ def read_tremv_config(filename):
     return(result)
 
 
-def generate_output_path(date):
-    return "tremv_output/" + str(date.year) + "/" + str(date.month) + "/"
+def logger_output_path(date):
+    return "logger_output/" + str(date.year) + "/" + str(date.month) + "/"
 
 
 """ Creates file name format: YYYY.MM.DD_[f1,f2].tremvlog from a given timestamp and filter.
