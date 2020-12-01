@@ -66,6 +66,10 @@ def trace_average(trace):
     return(value_sum/pts_per_minute)
 
 
+""" Averages values for a given station over a minute and prepares the averages as
+    an array of dictonaries whos length is equal to the number of filters provided.
+    Each dictionary uses station names as keys and the corrsponding average is the value.
+"""
 def rsam_processing(per_filter_filtered_stations, filters, station_names, received_station_names):
     result = [{} for i in filters]
 
