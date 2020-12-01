@@ -56,6 +56,6 @@ def read_tremvlog_file(filename):
 
             for i in range(0, len(station_names_in_file)):
                 name = station_names_in_file[i]
-                result[name].append(values[i])
+                result[name].append(float(values[i]))
 
     return(result)
