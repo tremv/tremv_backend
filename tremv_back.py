@@ -10,6 +10,10 @@ class backend(object):
         self.config_filename = "tremv_config.json"
         self.config = {}
 
+
+    """ Checks if the file timestamp has changed for the config file,
+        and if so it reloads it. the conifguration dictionary is then returned.
+    """
     def reload_config(self):
         stamp = os.stat(self.config_filename).st_mtime
 
@@ -19,12 +23,13 @@ class backend(object):
         
         return(self.config)
 
+
     @cherrypy.expose
     def index(self):
         return "hello!"
 
 
-    """Return the most up to date list of stations as json.
+    """ Return the most up to date list of stations as json.
     """
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -34,7 +39,7 @@ class backend(object):
         return(self.config["station_names"])
     
 
-    """Return the most up to date list of filters as json.
+    """ Return the most up to date list of filters as json.
     """
     @cherrypy.expose
     @cherrypy.tools.json_out()

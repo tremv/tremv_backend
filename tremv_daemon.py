@@ -104,6 +104,9 @@ def write_tremvlog_file(rsam_results, filters, station_names, starttime):
         file_exists = os.path.exists(file_path)
 
         output = open(file_path, "a")
+
+        #station_names_in_file = output.readline()
+        #do something based on whether a we have new station_name, or a station_name is removed
  
         if(file_exists):
             output.write("\n" + starttime_datetime.isoformat() + "\n")
@@ -147,7 +150,8 @@ def read_mseed_from_dir(path):
     return(stations)
 
 
-#TODO: this might not be complete?
+""" Writes out preprocessed station data(without filtering) to a miniseed file for the given date.
+"""
 def write_to_mseed(stations, timestamp):
     path = common.generate_output_path(timestamp)
 
@@ -162,6 +166,7 @@ def write_to_mseed(stations, timestamp):
     if(os.path.exists(file_path)):
         stations_pp = obspy.read(file_path)
 
+        #TODO: currently this doesn't work for some reason because of obspy...
         for s_pp in stations_pp:
             for s in stations:
                 if(s_pp.stats["station"] == s.stats["station"]):
@@ -173,6 +178,7 @@ def write_to_mseed(stations, timestamp):
         stations.write(file_path, format="MSEED")
 
 
+#NOTE: what if this is more like a library so people can customize the loop: for example if they want a 10min rsam instead?
 def main():
     config_filename = "tremv_config.json"
     config = common.read_tremv_config(config_filename)
@@ -204,6 +210,10 @@ def main():
 
         rsam_st = UTCDateTime()
 
+        #TODO:  Try to abstract this part because we could use it to spawn a process when we want to
+        #       lazy fill data that isn't there. Then when a we get a request for data that hasn't been
+        #       filtered yet with the requested filter, we can spawn it and then deliver the data
+        #       when it is ready...
         received_station_names = list_station_names(received_stations)
         pre_processed_stations = process_station_data(received_stations)
         per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
@@ -211,7 +221,7 @@ def main():
         rsam_results = rsam_processing(per_filter_filtered_stations, filters, station_names, received_station_names)
 
         write_tremvlog_file(rsam_results, filters, station_names, starttime)
-        write_to_mseed(pre_processed_stations, starttime)#Done so the pre processed date can be filtered with different filters at a later date.
+        write_to_mseed(pre_processed_stations, starttime)#Done so the pre processed data can be filtered with different filters at a later date.
 
         print("Rsam calculation duration: " + str(UTCDateTime() - rsam_st))
         print("Total duration: " + str(UTCDateTime() - starttime))
@@ -223,5 +233,6 @@ def main():
         if(stamp != config_stamp):
             config = common.read_tremv_config(config_filename)
             config_stamp = stamp
+
 
 main()

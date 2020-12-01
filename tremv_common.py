@@ -11,9 +11,23 @@ def read_tremv_config(filename):
     return(result)
 
 
+def generate_output_path(date):
+    return "tremv_output/" + str(date.year) + "/" + str(date.month) + "/"
+
+
+""" Creates file name format: YYYY.MM.DD_[f1,f2].tremvlog from a given timestamp and filter.
+    Date is a python datetime object and f is bandpass filter represented as a tuple of floats.
+"""
+def generate_tremvlog_filename(date, f):
+    datestr = str(date.year) + "." + str(date.month) + "." + str(date.day)
+    return(datestr + "_" + str(f[0]) + "," + str(f[1]) + ".tremvlog")
+
+
+""" Parses an iso format date string to python datetime object.
+"""
+def parse_isoformat_to_datetime(date_str):
 #NOTE:  We use this instead of datetime.datetime.fromisoformat since it is only support
 #       for python version 3.7 and up.
-def parse_isoformat_to_datetime(date_str):
     yy = int(date_str[0:4])
     mm = int(date_str[5:7])
     dd = int(date_str[8:10])
@@ -25,18 +39,8 @@ def parse_isoformat_to_datetime(date_str):
     return(datetime.datetime(year=yy, month=mm, day=dd, hour=h, minute=m, second=s))
 
 
-""" Creates file name format: YYYY.MM.DD_[f1,f2].tremvlog from a given timestamp and filter.
-    Date is a python datetime object and f is bandpass filter represented as a tuple of floats.
+""" Reads in a tremvlog file and returns a dictionary where the keys are the station names.
 """
-def generate_tremvlog_filename(date, f):
-    datestr = str(date.year) + "." + str(date.month) + "." + str(date.day)
-    return(datestr + "_" + str(f[0]) + "," + str(f[1]) + ".tremvlog")
-
-
-def generate_output_path(date):
-    return "tremv_output/" + str(date.year) + "/" + str(date.month) + "/"
-
-
 def read_tremvlog_file(filename, station_names):
     result = {}
 
