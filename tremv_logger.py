@@ -91,9 +91,7 @@ def rsam_processing(per_filter_filtered_stations, filters, station_names, receiv
 """ Creates output files...
 """
 def write_tremvlog_file(rsam_results, filters, station_names, starttime):
-    #TODO:  check timestamp of file when writing, to see if we have missed
-    #       any minutes for the current one
-    #TODO:  write to a log file of when this happened!
+    delimeter = " "
     starttime_datetime = starttime.datetime
     path = common.logger_output_path(starttime_datetime)
 
@@ -107,22 +105,48 @@ def write_tremvlog_file(rsam_results, filters, station_names, starttime):
 
         output = open(file_path, "a")
 
-        #station_names_in_file = output.readline()
-        #do something based on whether a we have new station_name, or a station_name is removed
- 
-        if(file_exists):
-            output.write("\n" + starttime_datetime.isoformat() + "\n")
- 
-            for name in station_names:
-                output.write(str(rsam_results[i][name])+" ")
-        else:
-            for name in station_names:
-                output.write(str(name)+" ")
- 
-            output.write("\n"+ starttime_datetime.isoformat() +"\n")
+        #TODO:  fill in values prior to the time that we create this file.
+        #       for example if we create it at 14:00, then everything before
+        #       that should be filled with zeroes...
 
-            for name in station_names:
-                output.write(str(rsam_results[i][name])+" ")
+        if(file_exists == False):
+            for j in range(0, len(station_names)):
+                output.write(station_names[j])
+                if(j == len(station_names)-1):
+                    output.write("\n")
+                else:
+                    output.write(delimeter)
+
+            minute_of_day = starttime.minute + starttime.hour * 60
+            #Fill in empty values in the file if it isn't created at midnight.
+            for j in range(0, minute_of_day-1):
+                for k in range(0, len(station_names)):
+                    output.write(str(0.0))
+                    if(k == len(station_names)-1):
+                        output.write("\n")
+                    else:
+                        output.write(delimeter)
+
+        #check file timestamp
+        minutes_since_last_write = int(round((time.time() - os.path.getmtime(file_path)) / 60))
+
+        #fill in missing data
+        for j in range(0, minutes_since_last_write-1):
+            for k in range(0, len(station_names)):
+                output.write(str(0.0))
+                if(k == len(station_names)-1):
+                    output.write("\n")
+                else:
+                    output.write(delimeter)
+
+        for j in range(0, len(station_names)):
+            name = station_names[j]
+            output.write(str(rsam_results[i][name]))
+
+            if(j == len(station_names)-1):
+                output.write("\n")
+            else:
+                output.write(delimeter)
  
         output.close()
 
@@ -178,6 +202,18 @@ def write_to_mseed(stations, timestamp):
         stations.write(file_path, format="MSEED")
 
 
+""" Opens a file for debug purposes.
+"""
+#TODO: make sure we are using datetime of timestamps everywhere in this file for the common function calls
+def open_debug_log(timestamp):
+    path = common.logger_output_path(timestamp)
+
+    if(os.path.exists(path) == False):
+        os.makedirs(path)
+
+    return open(common.logger_output_path(timestamp) + "debug.log", "a")
+
+
 #NOTE: what if this is more like a library so people can customize the loop: for example if they want a 10min rsam instead?
 def main():
     config_filename = "tremv_config.json"
@@ -198,13 +234,20 @@ def main():
         sleeptime_in_sec = (min_in_ns - (int(time.time() * SEC_TO_NANO) % min_in_ns)) / SEC_TO_NANO
         time.sleep(sleeptime_in_sec)
 
-        starttime = UTCDateTime()
+        fetch_starttime = UTCDateTime()
+        data_starttime = fetch_starttime - 60
+
+        print(str(fetch_starttime))
+
+        debug_log = open_debug_log(data_starttime)
+        debug_log.write("Data fetch duration: ")
+
         #TODO:Maybe the station parameter(the one after "VI") could be longer than 3 chars???
-        received_stations = seedlink_connection.get_waveforms(config["network"], "???", "??", "HHZ", starttime - 60, starttime)
-        daemon_log.write("Fetch duration: " + str(UTCDateTime() - starttime) + "\n")
+        received_stations = seedlink_connection.get_waveforms(config["network"], "???", "??", "HHZ", data_starttime, fetch_starttime)
+
+        debug_log.write(str(UTCDateTime() - fetch_starttime) + "\n")
 
         station_names = config["station_names"]
-
         rsam_st = UTCDateTime()
 
         #TODO:  Try to abstract this part because we could use it to spawn a process when we want to
@@ -217,14 +260,17 @@ def main():
 
         rsam_results = rsam_processing(per_filter_filtered_stations, filters, station_names, received_station_names)
 
-        daemon_log.write("Rsam calculation duration: " + str(UTCDateTime() - rsam_st) + "\n")
-        daemon_log.write("Total duration: " + str(UTCDateTime() - starttime) + "\n")
+        debug_log.write("Rsam calculation duration: " + str(UTCDateTime() - rsam_st) + "\n")
 
-        write_tremvlog_file(rsam_results, filters, station_names, starttime)
-        write_to_mseed(pre_processed_stations, starttime)#Done so the pre processed data can be filtered with different filters at a later date.
+        write_tremvlog_file(rsam_results, filters, station_names, data_starttime)
+        #TODO: this is currently broken because of obspy or something :(
+        write_to_mseed(pre_processed_stations, data_starttime)#Done so the pre processed data can be filtered with different filters at a later date.
 
-        daemon_log.write("Wrote to file at: " + str(UTCDateTime()) + "\n")
-        daemon_log.write("\n")
+        datestr = str(data_starttime.year) + "." + str(data_starttime.month) + "." + str(data_starttime.day)
+        debug_log.write("Wrote to files " + datestr + " at: " + str(UTCDateTime()) + "\n")
+        debug_log.write("\n")
+
+        debug_log.close()
 
         #reload the config file if it has changed
         stamp = os.stat(config_filename).st_mtime
