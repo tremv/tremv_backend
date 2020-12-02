@@ -91,7 +91,7 @@ def rsam_processing(per_filter_filtered_stations, filters, station_names, receiv
 
     return(result)
 
-#TODO: clean up this function a little bit perhaps?
+
 """ Creates output files...
 """
 def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
@@ -101,9 +101,8 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
     if(os.path.exists(path) == False):
         os.makedirs(path)
 
-    #TODO: rename i to filter index
-    for i in range(0, len(filters)):
-        filename = common.generate_tremvlog_filename(timestamp, filters[i])
+    for filter_index in range(0, len(filters)):
+        filename = common.generate_tremvlog_filename(timestamp, filters[filter_index])
         file_path = path + filename
         file_exists = os.path.exists(file_path)
 
@@ -182,8 +181,8 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
 
         #do the actual appending of new data...
         output = open(file_path, "a")
-        #check file timestamp
-        minutes_since_last_write = int(round((time.time() - os.path.getmtime(file_path)) / 60))
+        #check difference between current timestamp and file timestamp 
+        minutes_since_last_write = int((time.time() - os.path.getmtime(file_path)) / 60)
 
         #fill in missing data
         for j in range(0, minutes_since_last_write-1):
@@ -196,7 +195,7 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
 
         for j in range(0, len(station_names_in_file)):
             name = station_names_in_file[j]
-            result_dict = rsam_results[i]
+            result_dict = rsam_results[filter_index]
             if(name in result_dict):
                 output.write(str(result_dict[name]))
             else:
@@ -273,7 +272,6 @@ def open_debug_log(timestamp):
     return open(common.logger_output_path(timestamp) + "debug.log", "a")
 
 
-#NOTE: what if this is more like a library so people can customize the loop: for example if they want a 10min rsam instead?
 def main():
     config_filename = "tremv_config.json"
     config = common.read_tremv_config(config_filename)
