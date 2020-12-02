@@ -1,5 +1,5 @@
 import os
-import random
+import sys
 import time
 import obspy
 from obspy.clients.seedlink.basic_client import Client
@@ -131,7 +131,7 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
         tremvlog_file = open(file_path, "r")
 
         station_lists_differ = False
-        station_names_in_file = tremvlog_file.readline().split()
+        station_names_in_file = tremvlog_file.readline().split(delimeter)
 
         tremvlog_file.close()
 
@@ -147,6 +147,7 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
             data_in_file = common.read_tremvlog_file(file_path)
             minute_count = len(data_in_file[station_names_in_file[0]])
 
+            #TODO: write to an different file, so that if the code crashes here the information isn't lost
             output = open(file_path, "w")
 
             #account for stations that are not present in the file and fill those with zeroes
@@ -259,17 +260,21 @@ def write_to_mseed(stations, timestamp):
     else:
         stations.write(file_path, format="MSEED")
 
-
 """ Opens a file for debug purposes.
 """
 #TODO: make sure we are using datetime of timestamps everywhere in this file for the common function calls
-def open_debug_log(timestamp):
+def debug_log_open(timestamp):
     path = common.logger_output_path(timestamp)
 
     if(os.path.exists(path) == False):
         os.makedirs(path)
 
-    return open(common.logger_output_path(timestamp) + "debug.log", "a")
+    return open(common.logger_output_path(timestamp) + "debug" + str(timestamp.day) + ".log", "a")
+
+def debug_log_write(log, string, stdout=False):
+    log.write(string)
+    if(stdout):
+        print(string, end="")
 
 
 def main():
@@ -280,11 +285,17 @@ def main():
     seedlink_connection = Client(config["server"], config["port"], 5, False)
     filters = config["filters"]
 
+    debug_stdout = False
+    if(len(sys.argv) > 1):
+        if(sys.argv[1] == "debug"):
+            debug_stdout = True
+
     SEC_TO_NANO = 1000*1000*1000
     min_in_ns = 60 * SEC_TO_NANO
 
+    print("NOTE: the logger starts processing at minute boundaries.")
+
     while(True):
-        print("Sleeping until next minute.")
         #NOTE:  This makes it so the sleep time is the duration from now to the next minute.
         #       Thus calculations happen every minute, according to the system clock(assuming calculations take less than a minute).
         #       Would use time.time_ns() but it is only available in python 3.7 and up.
@@ -294,14 +305,14 @@ def main():
         fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
 
-        debug_log = open_debug_log(data_starttime)
-        debug_log.write("Fetch start time: " + str(fetch_starttime) + "\n")
-        debug_log.write("Data fetch duration: ")
+        log = debug_log_open(data_starttime)
+        debug_log_write(log, "Fetch start time: " + str(fetch_starttime) + "\n", debug_stdout)
+        debug_log_write(log, "Data fetch duration: ", debug_stdout)
 
         #TODO:Maybe the station parameter(the one after "VI") could be longer than 3 chars???
         received_stations = seedlink_connection.get_waveforms(config["network"], "???", "??", "HHZ", data_starttime, fetch_starttime)
 
-        debug_log.write(str(UTCDateTime() - fetch_starttime) + "\n")
+        debug_log_write(log, str(UTCDateTime() - fetch_starttime) + "\n", debug_stdout)
 
         station_names = config["station_names"]
         rsam_st = UTCDateTime()
@@ -316,17 +327,18 @@ def main():
 
         rsam_results = rsam_processing(per_filter_filtered_stations, filters, station_names, received_station_names)
 
-        debug_log.write("Rsam calculation duration: " + str(UTCDateTime() - rsam_st) + "\n")
+        debug_log_write(log, "Rsam calculation duration: " + str(UTCDateTime() - rsam_st) + "\n", debug_stdout)
 
         write_tremvlog_file(rsam_results, filters, station_names, data_starttime)
         #TODO: this is currently broken because of obspy or something :(
         #write_to_mseed(pre_processed_stations, data_starttime)#Done so the pre processed data can be filtered with different filters at a later date.
 
         datestr = str(data_starttime.year) + "." + str(data_starttime.month) + "." + str(data_starttime.day)
-        debug_log.write("Wrote to files " + datestr + " at: " + str(UTCDateTime()) + "\n")
-        debug_log.write("\n")
+        debug_log_write(log, "Wrote to files " + datestr + " at: " + str(UTCDateTime()) + "\n", debug_stdout)
+        debug_log_write(log, "Sleeping until next minute...\n", debug_stdout)
+        debug_log_write(log, "\n", debug_stdout)
 
-        debug_log.close()
+        log.close()
 
         #reload the config file if it has changed
         stamp = os.stat(config_filename).st_mtime
