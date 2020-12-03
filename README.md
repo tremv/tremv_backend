@@ -29,7 +29,7 @@ Before either program is started, a tremv_config.json file must be present. Exam
 {
 	"server": "rtserve.iris.washington.edu",
 	"port": 18000,
-	"network": "VI",
+	"network": "YN",
 	"filters": [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]],
 	"station_names": []
 }
