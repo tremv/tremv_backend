@@ -3,6 +3,36 @@ This is a pre-release version of the Tremv backend. It consists of two programs,
 Tremv Logger generates log files each day, reporting seismic activity averaged over 1 minute.
 Tremv Server distributes this data in json format via HTTP, based on requests to it.
 
+# Setup
+tremv_logger.py requires ObsPy and tremv_server.py requires CherryPy. These packages are available via `pip`.
+
+tremv_logger.py:
+```
+pip3 install obspy
+```
+tremv_server.py:
+```
+pip3 install cherrypy
+``` 
+
+Before either program is started, a `tremv_config.json` file must be present. 
+
+Example:
+```
+{
+	"server": "rtserve.iris.washington.edu",
+	"port": 18000,
+	"network": "YN",
+	"filters": [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]],
+	"station_names": []
+}
+```
+
+All parameters shown are required. The array in "station_names" must be filled with the stream names you want that are available in the network.
+Once this file has been created, the programs can be start however the user desires. The programs are intended to run as daemons, but currently
+there is no nice way of doing so without the use of external tool. We provide a bash script, `tremv_run.sh`, which relies on the program `screen`
+to run the programs as daemons. Providing the script with a port as an argument is neccessary for the server to run.
+
 # Tremv Logger
 The Tremv Logger connects to a Seedlink server and gathers raw data from the station network over the past minute.
 It then applies a 20HZ low-pass filter, decimates and demeans the data, and finally applies bandpass filters provided
@@ -107,33 +137,3 @@ Example response:
 	}
 ]
 ```
-
-# Setup
-tremv_logger.py requires ObsPy and tremv_server.py requires CherryPy. These packages are available via `pip`.
-
-tremv_logger.py:
-```
-pip3 install obspy
-```
-tremv_server.py:
-```
-pip3 install cherrypy
-``` 
-
-Before either program is started, a `tremv_config.json` file must be present. 
-
-Example:
-```
-{
-	"server": "rtserve.iris.washington.edu",
-	"port": 18000,
-	"network": "YN",
-	"filters": [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]],
-	"station_names": []
-}
-```
-
-All parameters shown are required. The array in "station_names" must be filled with the stream names you want that are available in the network.
-Once this file has been created, the programs can be start however the user desires. The programs are intended to run as daemons, but currently
-there is no nice way of doing so without the use of external tool. We provide a bash script, `tremv_run.sh`, which relies on the program `screen`
-to run the programs as daemons. Providing the script with a port as an argument is neccessary for the server to run.
