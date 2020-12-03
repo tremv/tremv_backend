@@ -30,8 +30,8 @@ Example:
 
 All parameters shown are required. The array in "station_names" must be filled with the stream names you want that are available in the network.
 Once this file has been created, the programs can be start however the user desires. The programs are intended to run as daemons, but currently
-there is no nice way of doing so without the use of external tool. We provide a bash script, `tremv_run.sh`, which relies on the program `screen`
-to run the programs as daemons. Providing the script with a port as an argument is neccessary for the server to run.
+there is no nice way of doing so without the use of external tools. We provide a bash script, `tremv_run.sh`, which relies on the program `screen`
+to run the programs as daemons. Providing the script with a server port as an argument is neccessary for the server to run.
 
 # Tremv Logger
 The Tremv Logger connects to a Seedlink server and gathers raw data from the station network over the past minute.
