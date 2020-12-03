@@ -23,3 +23,14 @@ tremv_server.py:
 ```
 pip3 install cherrypy
 ``` 
+
+Before either program is started, a tremv_config.json file must be present. Example:
+```
+{
+	"server": "rtserve.iris.washington.edu",
+	"port": 18000,
+	"network": "VI",
+	"filters": [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]],
+	"station_names": []
+}
+```
