@@ -15,6 +15,13 @@ The files are written out to the folder `logger_output` and are classified by ba
 The Tremv Server responds to HTTP requests made to it and returns data back as JSON. It also relies on the tremv_config.json file, but only for filters and station names.
 
 ## API
+The server uses HTTP POST and GET requests to provide data to the user. The following request url strings are supported:
+
+### /station_names [GET]
+
+### /filters [GET]
+
+### /
 
 # Setup
 tremv_logger.py requires ObsPy and tremv_server.py requires CherryPy. These packages are available via `pip`.
