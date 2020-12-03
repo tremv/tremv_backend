@@ -33,7 +33,21 @@ Example response:
 [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]]
 ```
 
-### /
+### latest [POST]
+blabla blabla you need to give it json
+
+Example
+```
+{}
+```
+
+### date [POST]
+blabla blabla you need to give it json
+
+Example
+```
+{}
+```
 
 # Setup
 tremv_logger.py requires ObsPy and tremv_server.py requires CherryPy. These packages are available via `pip`.
