@@ -1,2 +1,5 @@
 # tremv_backend
-The tremv backend. It consists of tremv_daemon, which writes tremvlogs, and tremv_back, which mediates them.
+This is a pre-release version of the Tremv backend. It consists of two programs, tremv_logger and tremv_server.
+
+# Setup
+blablabla
