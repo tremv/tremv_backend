@@ -1,5 +1,7 @@
-# tremv_backend
+# Tremv Backend
 This is a pre-release version of the Tremv backend. It consists of two programs, tremv_logger.py and tremv_server.py.
+Tremv Logger generates log files each day, reporting seismic activity averaged over 1 minute.
+Tremv Server distributes this data via HTTP in json format, based on requests to it.
 
 # Tremv Logger
 The Tremv Logger connects to a Seedlink server and gathers raw data from the station network over the past minute.
