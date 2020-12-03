@@ -13,7 +13,7 @@ to write out to file, as the seedlink connection does not always give back all s
 # Tremv Server
 
 # Setup
-Both tremv_logger.py requires ObsPy and tremv_server.py requires CherryPy. These packages are available via `pip`.
+tremv_logger.py requires ObsPy and tremv_server.py requires CherryPy. These packages are available via `pip`.
 
 tremv_logger.py:
 ```
