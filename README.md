@@ -34,19 +34,78 @@ Example response:
 ```
 
 ### latest [POST]
-blabla blabla you need to give it json
+Returns a list of dictionaries based on request parameters, with the latest data points. Each dictionary in the list of dictionaries corresponds to passband filters that were requested. 
+The keys in each the dictionary are stations that were requested.
 
-Example
+Example request:
 ```
-{}
+{
+	"station_names": ["gri", "gra", "ren", "skr"],
+	"filters": [[0.5, 1.0], [1.0, 2.0]]
+}
+```
+Both entries in the request object are optional, in which case all filters or all stations are included in the response.
+
+Example response:
+```
+[
+	{
+		"filter": [0.5, 1.0],
+		"stations": {
+			"gri": 123.5453,
+			"gra": 203.1168,
+			"ren": 198.5443,
+			"skr": 242.4200
+		}
+	},
+	{
+		"filter": [1.0, 2.0],
+		"stations": {
+			"gri": 223.6853,
+			"gra": 173.2968,
+			"ren": 218.1118,
+			"skr": 201.6900
+		}
+	}
+]
 ```
 
 ### date [POST]
-blabla blabla you need to give it json
+This request is work similar to the `latest` request, except you provide a date parameter.
+It then returns a the data for the whole day, in a similar response format to the `latest` request.
 
-Example
+Example request:
 ```
-{}
+{
+	"date": {"year": 2020, "month": 11, "day": 26}
+	"station_names": ["gri", "gra", "ren", "skr"],
+	"filters": [[0.5, 1.0], [1.0, 2.0]]
+}
+```
+Note that the date entry in the request body is **required**.
+
+Example response:
+```
+[
+	{
+		"filter": [0.5, 1.0],
+		"stations": {
+			"gri": [123.5453, ...],
+			"gra": [203.1168, ...],
+			"ren": [198.5443, ...],
+			"skr": [242.4200, ...]
+		}
+	},
+	{
+		"filter": [1.0, 2.0],
+		"stations": {
+			"gri": [223.6853, ...],
+			"gra": [173.2968, ...],
+			"ren": [218.1118, ...],
+			"skr": [201.6900, ...]
+		}
+	}
+]
 ```
 
 # Setup
