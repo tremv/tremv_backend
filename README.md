@@ -14,6 +14,8 @@ The files are written out to the folder `logger_output` and are classified by ba
 # Tremv Server
 The Tremv Server responds to HTTP requests made to it and returns data back as JSON. It also relies on the tremv_config.json file, but only for filters and station names.
 
+##API
+
 # Setup
 tremv_logger.py requires ObsPy and tremv_server.py requires CherryPy. These packages are available via `pip`.
 
@@ -41,5 +43,5 @@ Example:
 
 All parameters shown are required. The array in "station_names" must be filled with the stream names you want that are available in the network.
 Once this file has been created, the programs can be start however the user desires. The programs are intended to run as daemons, but currently
-there is no nice way of doing so without the use of external tool. We recommend using `screen -S session_name` where session_name is the name of
-the session, and then running the program with the python interpreter.
+there is no nice way of doing so without the use of external tool. We provide a bash script, `tremv_run.sh`, which relies on the program `screen`
+to run the programs as daemons. Providing the script with a port as an argument is neccessary for the server to run.
