@@ -17,9 +17,21 @@ The Tremv Server responds to HTTP requests made to it and returns data back as J
 ## API
 The server uses HTTP POST and GET requests to provide data to the user. The following request url strings are supported:
 
-### /station_names [GET]
+### station_names [GET]
+Returns a list of stations that are available on the server.
 
-### /filters [GET]
+Example response:
+```
+["gri", "hrn", "sig", "hla", "gra", "lei", "bre", "hed", "gil", "dim", "ski", "gha", "kvo", "ren", "mel", "grs"]
+```
+
+### filters [GET]
+Returns a list of the bandpass filters available in the system.
+
+Example response:
+```
+[[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]]
+```
 
 ### /
 
