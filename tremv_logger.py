@@ -138,7 +138,7 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
         #figure out if there is difference between the station_names list we provide and the one in the file...
         for s in station_names:
             if(s not in station_names_in_file):
-                station_list_diff = True
+                station_lists_differ = True
                 break
 
 
