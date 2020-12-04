@@ -171,7 +171,7 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
             for j in range(0, minute_count):
                 for k in range(0, len(station_names_in_file)):
                     name = station_names_in_file[k]
-                    output.write(data_in_file[name][j])
+                    output.write(str(data_in_file[name][j]))
 
                     if(k == len(station_names_in_file)-1):
                         output.write("\n")
