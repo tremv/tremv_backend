@@ -109,9 +109,9 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
         if(file_exists == False):
             f = open(file_path, "w")
 
-            for j in range(0, len(station_names)):
-                f.write(station_names[j])
-                if(j == len(station_names)-1):
+            for i in range(0, len(station_names)):
+                f.write(station_names[i])
+                if(i == len(station_names)-1):
                     f.write("\n")
                 else:
                     f.write(delimeter)
@@ -119,10 +119,10 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
             minute_of_day = timestamp.minute + timestamp.hour * 60
 
             #Fill in empty values in the file if it isn't created at midnight.
-            for j in range(0, minute_of_day-1):
-                for k in range(0, len(station_names)):
+            for i in range(0, minute_of_day-1):
+                for j in range(0, len(station_names)):
                     f.write(str(0.0))
-                    if(k == len(station_names)-1):
+                    if(j == len(station_names)-1):
                         f.write("\n")
                     else:
                         f.write(delimeter)
@@ -132,6 +132,9 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
 
         station_lists_differ = False
         station_names_in_file = tremvlog_file.readline().split(delimeter)
+
+        for i in range(0, len(station_names_in_file)):
+            station_names_in_file[i] = station_names_in_file[i].rstrip()
 
         tremvlog_file.close()
 
@@ -151,29 +154,29 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
             output = open(file_path, "w")
 
             #account for stations that are not present in the file and fill those with zeroes
-            for j in range(0, len(station_names)):
-                name = station_names[j]
+            for i in range(0, len(station_names)):
+                name = station_names[i]
 
                 if(name not in station_names_in_file):
-                    station_names_in_file.insert(j, name)
+                    station_names_in_file.insert(i, name)
                     data_in_file[name] = []
 
-                    for k in range(0, minute_count):
+                    for j in range(0, minute_count):
                         data_in_file[name].append(0.0)
 
-            for j in range(0, len(station_names_in_file)):
-                output.write(station_names_in_file[j])
-                if(j == len(station_names)-1):
+            for i in range(0, len(station_names_in_file)):
+                output.write(station_names_in_file[i])
+                if(i == len(station_names)-1):
                     output.write("\n")
                 else:
                     output.write(delimeter)
 
-            for j in range(0, minute_count):
-                for k in range(0, len(station_names_in_file)):
-                    name = station_names_in_file[k]
-                    output.write(str(data_in_file[name][j]))
+            for i in range(0, minute_count):
+                for j in range(0, len(station_names_in_file)):
+                    name = station_names_in_file[j]
+                    output.write(str(data_in_file[name][i]))
 
-                    if(k == len(station_names_in_file)-1):
+                    if(j == len(station_names_in_file)-1):
                         output.write("\n")
                     else:
                         output.write(delimeter)
@@ -186,23 +189,23 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
         minutes_since_last_write = int((time.time() - os.path.getmtime(file_path)) / 60)
 
         #fill in missing data
-        for j in range(0, minutes_since_last_write-1):
-            for k in range(0, len(station_names_in_file)):
+        for i in range(0, minutes_since_last_write-1):
+            for j in range(0, len(station_names_in_file)):
                 output.write(str(0.0))
-                if(k == len(station_names_in_file)-1):
+                if(j == len(station_names_in_file)-1):
                     output.write("\n")
                 else:
                     output.write(delimeter)
 
-        for j in range(0, len(station_names_in_file)):
-            name = station_names_in_file[j]
+        for i in range(0, len(station_names_in_file)):
+            name = station_names_in_file[i]
             result_dict = rsam_results[filter_index]
             if(name in result_dict):
                 output.write(str(result_dict[name]))
             else:
                 output.write(str(0.0))
 
-            if(j == len(station_names_in_file)-1):
+            if(i == len(station_names_in_file)-1):
                 output.write("\n")
             else:
                 output.write(delimeter)
