@@ -136,8 +136,8 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
         tremvlog_file.close()
 
         #figure out if there is difference between the station_names list we provide and the one in the file...
-        for s in station_names:
-            if(s not in station_names_in_file):
+        for name in station_names:
+            if(name not in station_names_in_file):
                 station_lists_differ = True
                 break
 
@@ -260,6 +260,7 @@ def write_to_mseed(stations, timestamp):
     else:
         stations.write(file_path, format="MSEED")
 
+#TODO: rather than having this debug file thing, perhaps we can just write everything to stdout and redirect that to a file or something?
 """ Opens a file for debug purposes.
 """
 #TODO: make sure we are using datetime of timestamps everywhere in this file for the common function calls
