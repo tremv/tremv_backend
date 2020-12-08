@@ -7,6 +7,12 @@ from obspy import UTCDateTime
 import tremv_common as common
 
 
+""" Prints debugging info to stderr
+"""
+def debug_print(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+
 """ Returns a list of station names from obspy trace object.
 """
 def list_station_names(stations):
@@ -263,23 +269,6 @@ def write_to_mseed(stations, timestamp):
     else:
         stations.write(file_path, format="MSEED")
 
-#TODO: rather than having this debug file thing, perhaps we can just write everything to stdout and redirect that to a file or something?
-""" Opens a file for debug purposes.
-"""
-#TODO: make sure we are using datetime of timestamps everywhere in this file for the common function calls
-def debug_log_open(timestamp):
-    path = common.logger_output_path(timestamp)
-
-    if(os.path.exists(path) == False):
-        os.makedirs(path)
-
-    return open(common.logger_output_path(timestamp) + "debug" + str(timestamp.day) + ".log", "a")
-
-def debug_log_write(log, string, stdout=False):
-    log.write(string)
-    if(stdout):
-        print(string, end="")
-
 
 def main():
     config_filename = "tremv_config.json"
@@ -309,14 +298,21 @@ def main():
         fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
 
-        log = debug_log_open(data_starttime)
-        debug_log_write(log, "Fetch start time: " + str(fetch_starttime) + "\n", debug_stdout)
-        debug_log_write(log, "Data fetch duration: ", debug_stdout)
+        log_path = common.logger_output_path(fetch_starttime)
+
+        if(os.path.exists(log_path) == False):
+            os.makedirs(log_path)
+
+        log_file = open(log_path + "debug" + str(fetch_starttime.day) + ".log", "a")
+        sys.stderr = log_file
+
+        debug_print("Fetch start time: " + str(fetch_starttime))
+        debug_print("Data fetch duration: ", end="")
 
         #TODO:Maybe the station parameter(the one after "VI") could be longer than 3 chars???
         received_stations = seedlink_connection.get_waveforms(config["network"], "???", "??", "HHZ", data_starttime, fetch_starttime)
 
-        debug_log_write(log, str(UTCDateTime() - fetch_starttime) + "\n", debug_stdout)
+        debug_print(str(UTCDateTime() - fetch_starttime))
 
         station_names = config["station_names"]
         rsam_st = UTCDateTime()
@@ -331,18 +327,18 @@ def main():
 
         rsam_results = rsam_processing(per_filter_filtered_stations, filters, station_names, received_station_names)
 
-        debug_log_write(log, "Rsam calculation duration: " + str(UTCDateTime() - rsam_st) + "\n", debug_stdout)
+        debug_print("Rsam calculation duration: " + str(UTCDateTime() - rsam_st))
 
         write_tremvlog_file(rsam_results, filters, station_names, data_starttime)
         #TODO: this is currently broken because of obspy or something :(
         #write_to_mseed(pre_processed_stations, data_starttime)#Done so the pre processed data can be filtered with different filters at a later date.
 
         datestr = str(data_starttime.year) + "." + str(data_starttime.month) + "." + str(data_starttime.day)
-        debug_log_write(log, "Wrote to files " + datestr + " at: " + str(UTCDateTime()) + "\n", debug_stdout)
-        debug_log_write(log, "Sleeping until next minute...\n", debug_stdout)
-        debug_log_write(log, "\n", debug_stdout)
+        debug_print("Wrote to files " + datestr + " at: " + str(UTCDateTime()))
+        debug_print("Sleeping until next minute...")
+        debug_print()
 
-        log.close()
+        log_file.close()
 
         #reload the config file if it has changed
         stamp = os.stat(config_filename).st_mtime
