@@ -118,8 +118,11 @@ class server(object):
             if(len(query["filters"]) > 0):
                 filters = query["filters"]
 
-        date = datetime.datetime(query["date"]["year"], query["date"]["month"], query["date"]["day"])
-        minute_of_day = (date.hour * 60) + date.minute
+        minute_of_day = 1440
+        today = datetime.datetime.now()
+
+        if(query["date"]["year"] == today.year and query["date"]["month"] == today.month and query["date"]["day"] == today.day):
+            minute_of_day = (today.hour * 60) + today.minute
 
         folder_path = common.logger_output_path(date)
 
