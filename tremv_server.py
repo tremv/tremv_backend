@@ -120,8 +120,9 @@ class server(object):
 
         minute_of_day = 1440
         today = datetime.datetime.now()
+        date = datetime.datetime(query["date"]["year"], query["date"]["month"], query["date"]["day"])
 
-        if(query["date"]["year"] == today.year and query["date"]["month"] == today.month and query["date"]["day"] == today.day):
+        if(date.year == today.year and date.month == today.month and date.day == today.day):
             minute_of_day = (today.hour * 60) + today.minute
 
         folder_path = common.logger_output_path(date)
