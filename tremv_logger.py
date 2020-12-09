@@ -278,11 +278,6 @@ def main():
     seedlink_connection = Client(config["server"], config["port"], 5, False)
     filters = config["filters"]
 
-    debug_stdout = False
-    if(len(sys.argv) > 1):
-        if(sys.argv[1] == "debug"):
-            debug_stdout = True
-
     SEC_TO_NANO = 1000*1000*1000
     min_in_ns = 60 * SEC_TO_NANO
 
