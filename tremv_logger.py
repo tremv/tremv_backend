@@ -157,7 +157,8 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
             minute_count = len(data_in_file[station_names_in_file[0]])
 
             #TODO: write to an different file, so that if the code crashes here the information isn't lost
-            output = open(file_path, "w")
+            temp_path = path + "temp" + str(filters[i][0]) + "," + str(filters[i][1])
+            output = open(temp_path, "w")
 
             #account for stations that are not present in the file and fill those with zeroes
             for i in range(0, len(station_names)):
@@ -188,6 +189,11 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
                         output.write(delimeter)
 
             output.close()
+
+            #swap files
+            os.rename(file_path, file_path + "old")
+            os.rename(temp_path, file_path)
+            os.remove(file_path + "old")
 
         #do the actual appending of new data...
         output = open(file_path, "a")
