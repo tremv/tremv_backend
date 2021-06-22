@@ -6,6 +6,8 @@ from obspy.clients.seedlink.basic_client import Client
 from obspy import UTCDateTime
 import tremv_common as common
 
+import datetime
+
 
 """ Prints debugging info to stderr
 """
@@ -30,10 +32,10 @@ def list_station_names(stations):
 def process_station_data(stations):
     result = stations.copy()
 
-    #This is done in order to avoid the phase shift in the decimation process
-    result.filter('lowpass', freq=20.0, corners=2, zerophase=True)#this is super slow!
+    # This is done in order to avoid the phase shift in the decimation process
+    result.filter("lowpass", freq=20.0, corners=2, zerophase=True)# this is super slow!
  
-    #down sample from 100hz to 20hz (100/5 = 20), no filter to avoid phase shift
+    # Down sample from 100hz to 20hz (100/5 = 20), no filter to avoid phase shift
     for trace in result:
         trace.decimate(5, no_filter=True)
  
@@ -83,7 +85,7 @@ def rsam_processing(per_filter_filtered_stations, filters, station_names, receiv
         for name in station_names:
             result[i][name] = 0.0
 
-    #here we accumulate points
+    # Here we accumulate points
     for i in range(0, len(filters)):
         station_rsam_dict = result[i]
  
@@ -98,9 +100,10 @@ def rsam_processing(per_filter_filtered_stations, filters, station_names, receiv
     return(result)
 
 
-""" Creates output files...
+""" Creates output files... (one per specified bandpass filter)
 """
 def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
+    
     delimeter = " "
     path = common.logger_output_path(timestamp)
 
@@ -114,6 +117,7 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
 
         if(file_exists == False):
             f = open(file_path, "w")
+            f.write("TIMESTAMP ")
 
             for i in range(0, len(station_names)):
                 f.write(station_names[i])
@@ -124,8 +128,9 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
 
             minute_of_day = timestamp.minute + timestamp.hour * 60
 
-            #Fill in empty values in the file if it isn't created at midnight.
-            for i in range(0, minute_of_day-1):
+            # Fill in empty values in the file if it isn't created at midnight.
+            for i in range(0, minute_of_day):
+                f.write(str(timestamp-60*(minute_of_day-i))+str(delimeter))
                 for j in range(0, len(station_names)):
                     f.write(str(0.0))
                     if(j == len(station_names)-1):
@@ -136,30 +141,62 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
 
         tremvlog_file = open(file_path, "r")
 
-        station_lists_differ = False
+        station_lists_differ = False # For added stations
+        stations_removed = False # For removed stations
         station_names_in_file = tremvlog_file.readline().split(delimeter)
-
+        station_names_in_file = station_names_in_file[1:] # Remove "TIMESTAMP" text at position 0
+        
         for i in range(0, len(station_names_in_file)):
             station_names_in_file[i] = station_names_in_file[i].rstrip()
 
+        # Reads most recent timestamp to back fill zeros below
+        # [this line of code is here to read while file is already open]
+        if(file_exists != False):
+            last_line = tremvlog_file.readlines()[-1]
+            last_timestamp = last_line[0:27]
+
+            # Read list of specific timestamps for file rewrite with station addition/removal
+            timestamps = common.read_tremvlog_timestamps(file_path)
+        
         tremvlog_file.close()
 
-        #figure out if there is difference between the station_names list we provide and the one in the file...
+        # For added stations:
+        # Determine if there is difference between the station_names list we provide and the one in the file...
+        added_stations = []
+        i = 0
         for name in station_names:
+            # Checks if config file station names are same as data file station names
             if(name not in station_names_in_file):
                 station_lists_differ = True
-                break
+                added_stations.append(name)
+            else:
+                pass
+            i += 1
 
-
-        #Since they differ we will have to read the whole file in and re-write it:
+        # For removed stations:
+        # Data and station header will remain in output file until next day.
+        # Will not change column position in file to match config file order unless stations subsequently added.
+        removed_stations = []
+        i = 0
+        for name in station_names_in_file:
+            # Checks if station names in file are same as config file station names
+            if(name not in station_names):
+                stations_removed = True
+                removed_stations.append(name)
+            else:
+                pass
+            i += 1
+        
+        # Since they differ we will have to read the whole file in and re-write it:
         if(station_lists_differ == True):
-            data_in_file = common.read_tremvlog_file(file_path)
-            minute_count = len(data_in_file[station_names_in_file[0]])
+            data_in_file = common.read_tremvlog_file(file_path) # AKA "result"
+            minute_count = len(data_in_file[station_names_in_file[1]]) # At 1 to ignore TIMESTAMP + stat names (first line)            
+            
+            #Writes to an different file so that if the code crashes here the information isn't lost
+            temp_path = path + "temp" + common.generate_tremvlog_filename(timestamp, filters[filter_index])
+            output = open(temp_path, "w")
 
-            #TODO: write to an different file, so that if the code crashes here the information isn't lost
-            output = open(file_path, "w")
-
-            #account for stations that are not present in the file and fill those with zeroes
+            #account for stations that are not present in the file and fill those with zeroes in dictionary
             for i in range(0, len(station_names)):
                 name = station_names[i]
 
@@ -170,53 +207,100 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
                     for j in range(0, minute_count):
                         data_in_file[name].append(0.0)
 
-            for i in range(0, len(station_names_in_file)):
-                output.write(station_names_in_file[i])
+            output.write("TIMESTAMP ")
+            for i in range(0, len(station_names)):
+                output.write(station_names[i])
+                
                 if(i == len(station_names)-1):
                     output.write("\n")
                 else:
                     output.write(delimeter)
 
             for i in range(0, minute_count):
-                for j in range(0, len(station_names_in_file)):
-                    name = station_names_in_file[j]
+                output.write(timestamps[i] + delimeter) # adds timestamp at beginning of lines in new file
+
+                for j in range(0, len(station_names)):
+                    name = station_names[j]
                     output.write(str(data_in_file[name][i]))
 
-                    if(j == len(station_names_in_file)-1):
+                    if(j == len(station_names)-1):
                         output.write("\n")
                     else:
                         output.write(delimeter)
 
             output.close()
+            
+            #swap files
+            os.rename(file_path, file_path + "old")
+            os.rename(temp_path, file_path)
+            os.remove(file_path + "old")
 
         #do the actual appending of new data...
         output = open(file_path, "a")
-        #check difference between current timestamp and file timestamp 
-        minutes_since_last_write = int((time.time() - os.path.getmtime(file_path)) / 60)
 
-        #fill in missing data
-        for i in range(0, minutes_since_last_write-1):
-            for j in range(0, len(station_names_in_file)):
-                output.write(str(0.0))
-                if(j == len(station_names_in_file)-1):
-                    output.write("\n")
-                else:
-                    output.write(delimeter)
+        start_timestamp = str(timestamp) # string of UTC starttime
 
+        if(file_exists != False):
+
+            last_timestamp_min = int(last_timestamp[14:16]) # most recently written timestamp minute
+            timestamp_min = int(start_timestamp[14:16]) # current timestamp minute to be written
+            check_timestamp_min = last_timestamp_min + 1 # should be equal to timestamp_min if one minute has passed
+
+            last_timestamp_hr = int(last_timestamp[11:13]) # most recently written timestamp hour
+            timestamp_hr = int(start_timestamp [11:13]) # current timestamp hour to be written
+            check_timestamp_hr = last_timestamp_hr + 1 # should be equal to timestamp_hr if one hour has passed
+
+            #check difference between current timestamp and file timestamp 
+            min_since_last_write = (timestamp_min - last_timestamp_min) + (timestamp_hr - last_timestamp_hr)*60 - 1
+            
+
+            # accounts for uninterrupted data progression
+            if(timestamp_min == check_timestamp_min and timestamp_hr == last_timestamp_hr):
+                pass
+            
+            # accounts for uninterrupted hour boundry
+            elif(timestamp_min == 00 and last_timestamp_min == 59 and timestamp_hr == check_timestamp_hr):
+                pass
+            
+            elif(timestamp_min != check_timestamp_min or timestamp_hr != check_timestamp_hr):
+                i = min_since_last_write
+                
+                while i != 0:
+                    output.write(str(timestamp - i*60) + str(delimeter))
+                    i = i - 1
+                    
+                    for j in range(0, len(station_names_in_file)):
+                        output.write(str(0.0))
+                        
+                        if(j == len(station_names_in_file)-1):
+                            output.write("\n")
+                        else:
+                            output.write(delimeter)
+                
+
+        # Writes current RSAM data
+        output.write(str(timestamp)+str(delimeter))
         for i in range(0, len(station_names_in_file)):
+            
             name = station_names_in_file[i]
             result_dict = rsam_results[filter_index]
+            
             if(name in result_dict):
-                output.write(str(result_dict[name]))
+                output.write(str(result_dict[name]))   
             else:
                 output.write(str(0.0))
-
+                
             if(i == len(station_names_in_file)-1):
                 output.write("\n")
             else:
                 output.write(delimeter)
 
         output.close()
+        
+    if(station_lists_differ == True):
+        debug_print("Added stations: " + str(added_stations))
+    if(stations_removed == True):
+        debug_print("Removed stations: " + str(removed_stations))
 
 
 """ Accumulate traces in a station that is found in a directory, handle gaps in
@@ -278,24 +362,33 @@ def main():
     seedlink_connection = Client(config["server"], config["port"], 5, False)
     filters = config["filters"]
 
-    debug_stdout = False
-    if(len(sys.argv) > 1):
-        if(sys.argv[1] == "debug"):
-            debug_stdout = True
-
     SEC_TO_NANO = 1000*1000*1000
     min_in_ns = 60 * SEC_TO_NANO
 
     print("NOTE: the logger starts processing at minute boundaries.")
 
     while(True):
-        #NOTE:  This makes it so the sleep time is the duration from now to the next minute.
-        #       Thus calculations happen every minute, according to the system clock(assuming calculations take less than a minute).
-        #       Would use time.time_ns() but it is only available in python 3.7 and up.
-        sleeptime_in_sec = (min_in_ns - (int(time.time() * SEC_TO_NANO) % min_in_ns)) / SEC_TO_NANO
-        time.sleep(sleeptime_in_sec)
 
-        fetch_starttime = UTCDateTime()
+        run_sleep = True
+        while(run_sleep == True):
+            #   NOTE:  This makes it so the sleep time is the duration from now to the next minute.
+            #   Thus calculations happen every minute, according to the system clock(assuming calculationsons take less than a minute).
+            #   Would use time.time_ns() but it is only available in python 3.7 and up.
+            sleeptime_in_sec = (min_in_ns - (int(time.time() * SEC_TO_NANO) % min_in_ns)) / SEC_TO_NANO
+            # sleeptime_in_sec is how many seconds are left over...
+            time.sleep(sleeptime_in_sec)
+
+            fetch_starttime = UTCDateTime()
+                  
+            # Variable to check that timestamps written at 00 seconds
+            sec_check = str(fetch_starttime)
+
+            if(str(sec_check[17:19]) == "00"):
+                run_sleep = False
+
+            if(str(sec_check[17:19]) != "00"):
+                pass
+        
         data_starttime = fetch_starttime - 60
 
         log_path = common.logger_output_path(fetch_starttime)
@@ -306,11 +399,11 @@ def main():
         log_file = open(log_path + "debug" + str(fetch_starttime.day) + ".log", "a")
         sys.stderr = log_file
 
-        debug_print("Fetch start time: " + str(fetch_starttime))
+        debug_print("\nFetch start time: " + str(fetch_starttime))
         debug_print("Data fetch duration: ", end="")
 
         #TODO:Maybe the station parameter(the one after "VI") could be longer than 3 chars???
-        received_stations = seedlink_connection.get_waveforms(config["network"], "???", "??", "HHZ", data_starttime, fetch_starttime)
+        received_stations = seedlink_connection.get_waveforms(config["network"], config["station_wildcard"], config["location_wildcard"], config["selectors"], data_starttime, fetch_starttime)
 
         debug_print(str(UTCDateTime() - fetch_starttime))
 
@@ -336,7 +429,6 @@ def main():
         datestr = str(data_starttime.year) + "." + str(data_starttime.month) + "." + str(data_starttime.day)
         debug_print("Wrote to files " + datestr + " at: " + str(UTCDateTime()))
         debug_print("Sleeping until next minute...")
-        debug_print()
 
         log_file.close()
 
@@ -348,4 +440,5 @@ def main():
             config_stamp = stamp
 
 
-main()
+if __name__ == "__main__":
+    main()
