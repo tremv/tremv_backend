@@ -235,6 +235,11 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
             os.rename(temp_path, file_path)
             os.remove(file_path + "old")
 
+            #swap files
+            os.rename(file_path, file_path + "old")
+            os.rename(temp_path, file_path)
+            os.remove(file_path + "old")
+
         #do the actual appending of new data...
         output = open(file_path, "a")
 
