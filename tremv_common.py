@@ -47,6 +47,7 @@ def read_tremvlog_file(filename):
     if(os.path.exists(filename)):
         input_file = open(filename, "r")
         station_names_in_file = input_file.readline().split()
+        station_names_in_file = station_names_in_file[1:] # remove "TIMESTAMP" at position 0
 
         for name in station_names_in_file:
             result[name] = []
@@ -56,6 +57,23 @@ def read_tremvlog_file(filename):
 
             for i in range(0, len(station_names_in_file)):
                 name = station_names_in_file[i]
-                result[name].append(float(values[i]))
-
+                ### i+1 to ignore timestamp (otherwise error cannot convert strng (timestamp) to float)
+                result[name].append(float(values[i+1]))
+            
+    #result = dictionary of RSAM results up to current minute for all stations in file
     return(result)
+
+""" Reads tremvlog file and returns list of timestamps.
+"""
+def read_tremvlog_timestamps(filename):
+    timestamp_list = []
+
+    if(os.path.exists(filename)):
+        input_file = open(filename, "r")
+
+        for line in input_file.readlines():
+            values = line.split()
+            timestamp_list.append(values[0])
+
+    timestamp_list.pop(0) # Remove "TIMESTAMP" from position 0, first line
+    return(timestamp_list)
