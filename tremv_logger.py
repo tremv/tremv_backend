@@ -235,11 +235,6 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
             os.rename(temp_path, file_path)
             os.remove(file_path + "old")
 
-            #swap files
-            os.rename(file_path, file_path + "old")
-            os.rename(temp_path, file_path)
-            os.remove(file_path + "old")
-
         #do the actual appending of new data...
         output = open(file_path, "a")
 
@@ -365,7 +360,6 @@ def main():
     config_stamp = os.stat(config_filename).st_mtime
 
     seedlink_connection = Client(config["server"], config["port"], 5, False)
-    filters = config["filters"]
 
     SEC_TO_NANO = 1000*1000*1000
     min_in_ns = 60 * SEC_TO_NANO
@@ -396,6 +390,7 @@ def main():
         
         data_starttime = fetch_starttime - 60
 
+        filters = config["filters"]
         log_path = common.logger_output_path(fetch_starttime)
 
         if(os.path.exists(log_path) == False):
