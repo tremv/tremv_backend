@@ -152,6 +152,9 @@ if(__name__ == "__main__"):
         print("Server port argument is required.")
         sys.exit()
 
+    #'tools.response_headers.on': True
+
+    cherrypy.tools.response_headers.on = True
     cherrypy.server.socket_host = "0.0.0.0"
     cherrypy.server.socket_port = int(sys.argv[1])
     cherrypy.quickstart(server())
