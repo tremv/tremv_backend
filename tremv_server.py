@@ -28,25 +28,13 @@ class server(object):
     def index(self):
         return "hello!"
 
-
-    """ Return the most up to date list of stations as json.
+    """ Return list of station names and a list of filters
     """
     @cherrypy.expose
     @cherrypy.tools.json_out()
-    def station_names(self):
+    def metadata(self):
         self.reload_config()
-
-        return(self.config["station_names"])
-    
-
-    """ Return the most up to date list of filters as json.
-    """
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    def filters(self):
-        self.reload_config()
-
-        return(self.config["filters"])
+        return({"filters": self.config["filters"], "station_names": self.config["station_names"]})
 
 
     """ Reads the newest tremvlogs based on provided filters, and returns the latest
