@@ -141,7 +141,7 @@ class server(object):
                         elif(i == range_in_days-1):#end
                             file_minute_end = query_minute_end
 
-                        for j in range(minute_start, minute_end):
+                        for j in range(file_minute_start, file_minute_end):
                             station_data[name].append(rsam_data[name][j])
 
                     result.append({"filter": f, "stations": station_data})
