@@ -126,7 +126,7 @@ class server(object):
                     station_data = {}
 
                     for name in station_names:
-                        if(name in self.config["station_names"] and name in rsam_results):
+                        if(name in self.config["station_names"] and name in rsam_data):
                             if(name not in station_data):
                                 station_data[name] = []
 
