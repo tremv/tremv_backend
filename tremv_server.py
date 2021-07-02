@@ -61,7 +61,13 @@ class server(object):
                 filters = query["filters"]
 
         #NOTE: Reading the entire file in for now. Prehaps this can be made more efficient via seeking in the file or something...
-        date = datetime.datetime.now()
+        date_now = datetime.datetime.now()
+        #@Robustness:   if the request comes in at some minute timeframe and the data point is not ready
+        #               (that is if we count the lines in the file and they are == the (minute of request - 1)),
+        #               wait until it is ready and then send it
+
+        #what minute should this be? might be off by one if not careful
+        date = datetime.datetime(date_now.year, date_now.month, date_now.day,)
         folder_path = common.logger_output_path(date)
 
         for f in filters:
@@ -78,7 +84,7 @@ class server(object):
                     else:
                         station_data[name] = 0.0
 
-                result.append({"filter": f, "stations": station_data})
+                result.append({"timestamps": [date.isoformat()], "filter": f, "stations": station_data})
 
         return(result)
 
@@ -124,6 +130,7 @@ class server(object):
                     rsam_data = common.read_tremvlog_file(folder_path + common.generate_tremvlog_filename(date, f))
 
                     station_data = {}
+                    timestamps = []
 
                     for name in station_names:
                         if(name in self.config["station_names"] and name in rsam_data):
@@ -141,61 +148,14 @@ class server(object):
                         elif(i == range_in_days-1):#end
                             file_minute_end = query_minute_end
 
+                        date_minute_increment = date + datetime.timedelta(minutes=file_minute_start)
+
                         for j in range(file_minute_start, file_minute_end):
                             station_data[name].append(rsam_data[name][j])
+                            timestamps.append(date_minute_increment.isoformat())
+                            date_minute_increment = date_minute_increment + datetime.timedelta(minutes=1)
 
-                    result.append({"filter": f, "stations": station_data})
-
-        return(result)
-
-
-    """ Reads tremvlogs based on provided date and filters, and returns the stations
-        as a json.
-    """
-    @cherrypy.expose
-    @cherrypy.tools.json_in()
-    @cherrypy.tools.json_out()
-    def date(self):
-        result = []
-        query = cherrypy.request.json
-
-        self.reload_config()
-
-        station_names = self.config["station_names"]
-        filters = self.config["filters"]
-
-        if("station_names" in query):
-            if(len(query["station_names"]) > 0):
-                station_names = query["station_names"]
-
-        if("filters" in query):
-            if(len(query["filters"]) > 0):
-                filters = query["filters"]
-
-        minute_of_day = 1440
-        today = datetime.datetime.now()
-        date = datetime.datetime(query["date"]["year"], query["date"]["month"], query["date"]["day"])
-
-        if(date.year == today.year and date.month == today.month and date.day == today.day):
-            minute_of_day = (today.hour * 60) + today.minute
-
-        folder_path = common.logger_output_path(date)
-
-        for f in filters:
-            if(f in self.config["filters"]):
-                tremvlog_filename = common.generate_tremvlog_filename(date, f)
-                path = folder_path + tremvlog_filename
-                rsam_results = common.read_tremvlog_file(path)
-
-                station_data = {}
-
-                for name in station_names:
-                    if(name in self.config["station_names"] and name in rsam_results):
-                        station_data[name] = rsam_results[name]
-                    else:
-                        station_data[name] = [0.0 for x in range(0, minute_of_day)]
-
-                result.append({"filter": f, "stations": station_data})
+                    result.append({"timestamps": timestamps, "filter": f, "stations": station_data})
 
         return(result)
 
