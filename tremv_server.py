@@ -95,7 +95,6 @@ class server(object):
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
     def range(self):
-        result = []
         query = cherrypy.request.json
 
         self.reload_config()
@@ -111,6 +110,14 @@ class server(object):
             if(len(query["filters"]) > 0):
                 filters = query["filters"]
 
+        result = {}
+        result["timestamps"] = []
+        result["data"] = [{} for x in filters]
+
+        for i in range(0, len(filters)):
+            result["data"][i]["filter"] = filters[i]
+            result["data"][i]["stations"] = {}
+
         #TODO: make sure these are valid values...
         #keep the dates without minute info, and just keep the minutes as integers, which is easier
         date_start = datetime.datetime(query["rangestart"]["year"], query["rangestart"]["month"], query["rangestart"]["day"])
@@ -121,41 +128,40 @@ class server(object):
 
         range_in_days = 1 + int((date_end - date_start) / datetime.timedelta(days=1))
 
-        #use minutestart when we are reading the first file, use minuteend when we are reading the last file
-        for f in filters:
-            if(f in self.config["filters"]):
-                for i in range(0, range_in_days):
-                    date = date_start + datetime.timedelta(days=i)
+        for i in range(0, range_in_days):
+            date = date_start + datetime.timedelta(days=i)
+            file_minute_start = 0
+            file_minute_end = 60*24
+
+            if(range_in_days == 1):
+                file_minute_start = query_minute_start
+                file_minute_end = query_minute_end
+            elif(i == 0):#start
+                file_minute_start = query_minute_start
+            elif(i == range_in_days-1):#end
+                file_minute_end = query_minute_end
+            
+            date_minute_increment = date + datetime.timedelta(minutes=file_minute_start)
+
+            for j in range(file_minute_start, file_minute_end):
+                result["timestamps"].append(date_minute_increment.isoformat())
+                date_minute_increment = date_minute_increment + datetime.timedelta(minutes=1)
+
+            #use minutestart when we are reading the first file, use minuteend when we are reading the last file
+            for j in range(0, len(filters)):
+                f = filters[j]
+
+                if(f in self.config["filters"]):
                     folder_path = common.logger_output_path(date)
                     rsam_data = common.read_tremvlog_file(folder_path + common.generate_tremvlog_filename(date, f))
 
-                    station_data = {}
-                    timestamps = []
-
                     for name in station_names:
                         if(name in self.config["station_names"] and name in rsam_data):
-                            if(name not in station_data):
-                                station_data[name] = []
+                            if(name not in result["data"][j]["stations"]):
+                                result["data"][j]["stations"][name] = []
 
-                        file_minute_start = 0
-                        file_minute_end = 60*24
-
-                        if(range_in_days == 1):
-                            file_minute_start = query_minute_start
-                            file_minute_end = query_minute_end
-                        elif(i == 0):#start
-                            file_minute_start = query_minute_start
-                        elif(i == range_in_days-1):#end
-                            file_minute_end = query_minute_end
-
-                        date_minute_increment = date + datetime.timedelta(minutes=file_minute_start)
-
-                        for j in range(file_minute_start, file_minute_end):
-                            station_data[name].append(rsam_data[name][j])
-                            timestamps.append(date_minute_increment.isoformat())
-                            date_minute_increment = date_minute_increment + datetime.timedelta(minutes=1)
-
-                    result.append({"timestamps": timestamps, "filter": f, "stations": station_data})
+                            for k in range(file_minute_start, file_minute_end):
+                                result["data"][j]["stations"][name].append(rsam_data[name][k])
 
         return(result)
 
