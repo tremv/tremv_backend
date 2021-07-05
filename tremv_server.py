@@ -24,10 +24,6 @@ class server(object):
         return(self.config)
 
 
-    @cherrypy.expose
-    def index(self):
-        return "hello!"
-
     """ Return list of station names and a list of filters
     """
     @cherrypy.expose
@@ -171,9 +167,6 @@ if(__name__ == "__main__"):
         print("Server port argument is required.")
         sys.exit()
 
-    #TODO: this shouldn't be required once we are hosting the api and the frontend at the same origin
-    cherrypy.config.update({"tools.response_headers.on": True})
-    cherrypy.config.update({"tools.response_headers.headers": [("Access-Control-Allow-Origin", "*")]})
     cherrypy.server.socket_host = "0.0.0.0"
     cherrypy.server.socket_port = int(sys.argv[1])
-    cherrypy.quickstart(server())
+    cherrypy.quickstart(server(), "/", "request.config")
