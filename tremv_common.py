@@ -1,3 +1,7 @@
+#Authors:
+#Bethany Erin Vanderhoof
+#Þórður Ágúst Karlsson
+
 import os
 import json
 import datetime
