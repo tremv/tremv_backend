@@ -7,11 +7,23 @@ import sys
 import datetime
 import tremv_common as common
 
-class server(object):
+class api(object):
     def __init__(self):
         self.config_stamp = 0
         self.config_filename = "tremv_config.json"
         self.config = {}
+
+    def jsonResult(filters):
+        result = {}
+        result["timestamps"] = []
+        result["station_names"] = []
+        result["data"] = [{} for x in filters]
+
+        for i in range(0, len(filters)):
+            result["data"][i]["filter"] = filters[i]
+            result["data"][i]["stations"] = {}
+
+        return result
 
 
     """ Checks if the file timestamp has changed for the config file,
@@ -59,9 +71,12 @@ class server(object):
             if(len(query["filters"]) > 0):
                 filters = query["filters"]
 
-        for f in filters:
-            f[0] = float(f[0])
-            f[1] = float(f[1])
+        result = self.jsonResult()
+
+        #NOTE: need to do this because javascript interprets 1.0 from the metadata response as an integer
+        for i in range(0, len(filters)):
+            filters[i][0] = float(filters[i][0])
+            filters[i][1] = float(filters[i][1])
 
         #NOTE: Reading the entire file in for now. Prehaps this can be made more efficient via seeking in the file or something...
         date_now = datetime.datetime.now()
@@ -73,24 +88,20 @@ class server(object):
         date = datetime.datetime(date_now.year, date_now.month, date_now.day,)
         folder_path = common.logger_output_path(date)
 
-        for f in filters:
+        for i in range(0, len(filters)):
+            f = filters[i]
             if(f in self.config["filters"]):
                 tremvlog_filename = common.generate_tremvlog_filename(date, f)
                 path = folder_path + tremvlog_filename
-                rsam_results = common.read_tremvlog_file(path)
-
-                station_data = {}
+                rsam_data = common.read_tremvlog_file(path)
 
                 for name in station_names:
-                    if(name in self.config["station_names"] and name in rsam_results):
-                        station_data[name] = rsam_results[name][-1]
+                    if(name in rsam_data):
+                        result["data"][i]["stations"][name] = rsam_data[name][-1]
                     else:
-                        station_data[name] = 0.0
-
-                result.append({"timestamps": [date.isoformat()], "filter": f, "stations": station_data})
+                        result["data"][i]["stations"][name] = 0.0
 
         return(result)
-
 
     """ Reads tremvlogs based on provided date and filters, and returns the stations
         as a json.
@@ -115,19 +126,13 @@ class server(object):
             if(len(query["filters"]) > 0):
                 filters = query["filters"]
 
-        result = {}
-        result["timestamps"] = []
-        result["station_names"] = []
-        result["data"] = [{} for x in filters]
-
-        for i in range(0, len(filters)):
-            result["data"][i]["filter"] = filters[i]
-            result["data"][i]["stations"] = {}
+        result = self.jsonResult()
 
         #NOTE: need to do this because javascript interprets 1.0 from the metadata response as an integer
-        for f in filters:
-            f[0] = float(f[0])
-            f[1] = float(f[1])
+        for i in range(0, len(filters)):
+            filters[i][0] = float(filters[i][0])
+            filters[i][1] = float(filters[i][1])
+
 
         #TODO: make sure these are valid values...
         #keep the dates without minute info, and just keep the minutes as integers, which is easier
@@ -194,6 +199,10 @@ class server(object):
 
         return(result)
 
+class frontend(object):
+    def __init__(self):
+        pass
+
 #TODO: support querying for an arbritrary date range, not just a specific date
 if(__name__ == "__main__"):
     if(len(sys.argv) == 1):
@@ -202,4 +211,15 @@ if(__name__ == "__main__"):
 
     cherrypy.server.socket_host = "0.0.0.0"
     cherrypy.server.socket_port = int(sys.argv[1])
-    cherrypy.quickstart(server(), "/", "request.config")
+    cherrypy.tree.mount(frontend(), "/plot", config="plot.config")
+    cherrypy.tree.mount(frontend(), "/request", config="request.config")
+    cherrypy.tree.mount(api(), "/api")
+
+    if hasattr(cherrypy.engine, 'block'):
+        # 3.1 syntax
+        cherrypy.engine.start()
+        cherrypy.engine.block()
+    else:
+        # 3.0 syntax
+        cherrypy.server.quickstart()
+        cherrypy.engine.start()
