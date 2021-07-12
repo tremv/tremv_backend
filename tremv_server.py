@@ -123,7 +123,7 @@ class server(object):
             result["data"][i]["filter"] = filters[i]
             result["data"][i]["stations"] = {}
 
-        #NOTE: need to do this because javascript interprets 1.0 from the metadata response as 1(integer)
+        #NOTE: need to do this because javascript interprets 1.0 from the metadata response as an integer
         for f in filters:
             f[0] = float(f[0])
             f[1] = float(f[1])
@@ -136,6 +136,13 @@ class server(object):
         #NOTE: for some reason "hour" and "minute" is a string?
         query_minute_start = int(query["rangestart"]["hour"]) * 60 + int(query["rangestart"]["minute"])
         query_minute_end = int(query["rangeend"]["hour"]) * 60 + int(query["rangeend"]["minute"])
+
+        if(date_start > date_end):
+            return(result)
+
+        if(date_start == date_end):
+            if(query_minute_start > query_minute_end):
+                return(result)
 
         range_in_days = 1 + int((date_end - date_start) / datetime.timedelta(days=1))
 
@@ -167,7 +174,11 @@ class server(object):
                     folder_path = common.logger_output_path(date)
                     filename = folder_path + common.generate_tremvlog_filename(date, f)
                     rsam_data = common.read_tremvlog_file(filename)
-                    print(filename)
+
+                    if(not rsam_data):
+                        tremlog = pytremget.tremlog_get(date.year, date.month, date.day)
+                        #TODO: get the filter that was actually requested!!!
+                        rsam_data = tremlog.values_z[0]
 
                     for name in station_names:
                         if(name in rsam_data):
