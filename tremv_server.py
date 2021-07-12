@@ -117,6 +117,7 @@ class server(object):
 
         result = {}
         result["timestamps"] = []
+        result["station_names"] = []
         result["data"] = [{} for x in filters]
 
         for i in range(0, len(filters)):
@@ -176,12 +177,15 @@ class server(object):
                     rsam_data = common.read_tremvlog_file(filename)
 
                     if(not rsam_data):
-                        tremlog = pytremget.tremlog_get(date.year, date.month, date.day)
+                        tremlog = pytremget.tremlog_get(date.year, date.month, date.day, log_transform=True)
                         #TODO: get the filter that was actually requested!!!
                         rsam_data = tremlog.values_z[0]
 
                     for name in station_names:
                         if(name in rsam_data):
+                            if(name not in result["station_names"]):
+                                result["station_names"].append(name)
+
                             if(name not in result["data"][j]["stations"]):
                                 result["data"][j]["stations"][name] = []
 
