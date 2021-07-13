@@ -4,6 +4,7 @@ import pytremget
 import cherrypy
 import os
 import sys
+import math
 import datetime
 import tremv_common as common
 
@@ -12,8 +13,9 @@ class api(object):
         self.config_stamp = 0
         self.config_filename = "tremv_config.json"
         self.config = {}
+        self.standard_filters = [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]]
 
-    def jsonResult(filters):
+    def jsonResult(self, filters):
         result = {}
         result["timestamps"] = []
         result["station_names"] = []
@@ -71,7 +73,11 @@ class api(object):
             if(len(query["filters"]) > 0):
                 filters = query["filters"]
 
-        result = self.jsonResult()
+        do_log_transform = False
+        if("do_log_transform" in query):
+            do_log_transform = query["do_log_transform"]
+
+        result = self.jsonResult(filters)
 
         #NOTE: need to do this because javascript interprets 1.0 from the metadata response as an integer
         for i in range(0, len(filters)):
@@ -97,11 +103,16 @@ class api(object):
 
                 for name in station_names:
                     if(name in rsam_data):
-                        result["data"][i]["stations"][name] = rsam_data[name][-1]
+                        latest_value = rsam_data[name][-1]
+                        if(do_log_transform):
+                            result["data"][i]["stations"][name] = math.log(latest_value)*1000
+
+                        result["data"][i]["stations"][name] = latest_value
                     else:
                         result["data"][i]["stations"][name] = 0.0
 
         return(result)
+
 
     """ Reads tremvlogs based on provided date and filters, and returns the stations
         as a json.
@@ -126,13 +137,16 @@ class api(object):
             if(len(query["filters"]) > 0):
                 filters = query["filters"]
 
-        result = self.jsonResult()
+        do_log_transform = False
+        if("do_log_transform" in query):
+            do_log_transform = query["do_log_transform"]
+
+        result = self.jsonResult(filters)
 
         #NOTE: need to do this because javascript interprets 1.0 from the metadata response as an integer
         for i in range(0, len(filters)):
             filters[i][0] = float(filters[i][0])
             filters[i][1] = float(filters[i][1])
-
 
         #TODO: make sure these are valid values...
         #keep the dates without minute info, and just keep the minutes as integers, which is easier
@@ -182,9 +196,17 @@ class api(object):
                     rsam_data = common.read_tremvlog_file(filename)
 
                     if(not rsam_data):
-                        tremlog = pytremget.tremlog_get(date.year, date.month, date.day, log_transform=True)
+                        tremlog = pytremget.tremlog_get(date.year, date.month, date.day, log_transform=do_log_transform)
                         #TODO: get the filter that was actually requested!!!
-                        rsam_data = tremlog.values_z[0]
+                        std_filter_index = self.standard_filters.index(f)
+                        rsam_data = tremlog.values_z[std_filter_index]
+                    else:
+                        if(do_log_transform):
+                            for name in station_names:
+                                if(name in rsam_data):
+                                    for k in range(0, len(rsam_data[name])):
+                                        if(rsam_data[name][k] > 0.0):
+                                            rsam_data[name][k] = math.log(rsam_data[name][k])*1000
 
                     for name in station_names:
                         if(name in rsam_data):
@@ -194,10 +216,13 @@ class api(object):
                             if(name not in result["data"][j]["stations"]):
                                 result["data"][j]["stations"][name] = []
 
-                            for k in range(file_minute_start, file_minute_end):
+                            range_end = min(file_minute_end, len(rsam_data[name]))
+
+                            for k in range(file_minute_start, range_end):
                                 result["data"][j]["stations"][name].append(rsam_data[name][k])
 
         return(result)
+
 
 class frontend(object):
     def __init__(self):
