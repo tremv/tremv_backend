@@ -197,7 +197,7 @@ class api(object):
 
                     if(not rsam_data):
                         tremlog = pytremget.tremlog_get(date.year, date.month, date.day, log_transform=do_log_transform)
-                        #TODO: get the filter that was actually requested!!!
+                        #TODO: maybe not the most robust thing...
                         std_filter_index = self.standard_filters.index(f)
                         rsam_data = tremlog.values_z[std_filter_index]
                     else:
