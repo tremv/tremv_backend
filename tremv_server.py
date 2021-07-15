@@ -102,14 +102,15 @@ class api(object):
                 rsam_data = common.read_tremvlog_file(path)
 
                 for name in station_names:
+                    latest_value = 0.0
                     if(name in rsam_data):
                         latest_value = rsam_data[name][-1]
-                        if(do_log_transform):
-                            result["data"][i]["stations"][name] = math.log(latest_value)*1000
 
-                        result["data"][i]["stations"][name] = latest_value
-                    else:
-                        result["data"][i]["stations"][name] = 0.0
+                        if(do_log_transform):
+                            if(latest_value > 0.0):
+                                latest_value = math.log(latest_value)*1000
+
+                    result["data"][i]["stations"][name] = latest_value
 
         return(result)
 
