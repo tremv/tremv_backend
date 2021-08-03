@@ -5,6 +5,8 @@
 import os
 import sys
 import time
+import thread
+import requests#for fsdn request
 import obspy
 from obspy.clients.seedlink.basic_client import Client
 from obspy import UTCDateTime
@@ -107,7 +109,6 @@ def rsam_processing(per_filter_filtered_stations, filters, station_names, receiv
 """ Creates output files... (one per specified bandpass filter)
 """
 def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
-    
     delimeter = " "
     path = common.logger_output_path(timestamp)
 
@@ -330,34 +331,6 @@ def read_mseed_from_dir(path):
     return(stations)
 
 
-""" Writes out preprocessed station data(without filtering) to a miniseed file for the given date.
-"""
-def write_to_mseed(stations, timestamp):
-    path = common.logger_output_path(timestamp)
-
-    if(os.path.exists(path) == False):
-        os.makedirs(path)
-
-    ts_str = str(timestamp)
-    filedate = ts_str[0:4] + "." + ts_str[5:7] + "." + ts_str[8:10]
-    filename = filedate + "_pp.mseed"
-    file_path = path + filename
-
-    if(os.path.exists(file_path)):
-        stations_pp = obspy.read(file_path)
-
-        #TODO: currently this doesn't work for some reason because of obspy...
-        for s_pp in stations_pp:
-            for s in stations:
-                if(s_pp.stats["station"] == s.stats["station"]):
-                    s_pp = s_pp + s
-
-        stations_pp.write(file_path, format="MSEED")
-
-    else:
-        stations.write(file_path, format="MSEED")
-
-
 def main():
     config_filename = "tremv_config.json"
     config = common.read_tremv_config(config_filename)
@@ -371,27 +344,19 @@ def main():
     print("NOTE: the logger starts processing at minute boundaries.")
 
     while(True):
+        #TODO: this should go on a seperate thread in the while loop...
+        response_filename = "response.xml"
+        if(os.path.exists(response_filename) == False):
+            xml = requests.get(config["response_address"])
+            f = open(response_filename, "w")
+            f.write(xml.text)
 
-        run_sleep = True
-        while(run_sleep == True):
-            #   NOTE:  This makes it so the sleep time is the duration from now to the next minute.
-            #   Thus calculations happen every minute, according to the system clock(assuming calculationsons take less than a minute).
-            #   Would use time.time_ns() but it is only available in python 3.7 and up.
-            sleeptime_in_sec = (min_in_ns - (int(time.time() * SEC_TO_NANO) % min_in_ns)) / SEC_TO_NANO
-            # sleeptime_in_sec is how many seconds are left over...
-            time.sleep(sleeptime_in_sec)
+        #   NOTE(thordur):  Here we figure out how many seconds are to the next minute using the system clock.
+        #                   Would use time.time_ns() but it is only available in python 3.7 and up.
+        sleeptime_in_sec = (min_in_ns - (int(time.time() * SEC_TO_NANO) % min_in_ns)) / SEC_TO_NANO
+        time.sleep(sleeptime_in_sec)
 
-            fetch_starttime = UTCDateTime()
-                  
-            # Variable to check that timestamps written at 00 seconds
-            sec_check = str(fetch_starttime)
-
-            if(str(sec_check[17:19]) == "00"):
-                run_sleep = False
-
-            if(str(sec_check[17:19]) != "00"):
-                pass
-        
+        fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
 
         filters = config["filters"]
@@ -406,18 +371,20 @@ def main():
         debug_print("\nFetch start time: " + str(fetch_starttime))
         debug_print("Data fetch duration: ", end="")
 
-        #TODO:Maybe the station parameter(the one after "VI") could be longer than 3 chars???
+        inv = obspy.read_inventory("response.xml")
+
         received_stations = seedlink_connection.get_waveforms(config["network"], config["station_wildcard"], config["location_wildcard"], config["selectors"], data_starttime, fetch_starttime)
+        received_stations.remove_response(inventory=inv)
 
         debug_print(str(UTCDateTime() - fetch_starttime))
 
         station_names = config["station_names"]
         rsam_st = UTCDateTime()
 
-        #TODO:  Try to abstract this part because we could use it to spawn a process when we want to
-        #       lazy fill data that isn't there. Then when a we get a request for data that hasn't been
-        #       filtered yet with the requested filter, we can spawn it and then deliver the data
-        #       when it is ready...
+        #TODO(thordur): Try to abstract this part because we could use it to spawn a process when we want to
+        #               lazy fill data that isn't there. Then when a we get a request for data that hasn't been
+        #               filtered yet with the requested filter, we can spawn it and then deliver the data
+        #               when it is ready...
         received_station_names = list_station_names(received_stations)
         pre_processed_stations = process_station_data(received_stations)
         per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
@@ -427,8 +394,6 @@ def main():
         debug_print("Rsam calculation duration: " + str(UTCDateTime() - rsam_st))
 
         write_tremvlog_file(rsam_results, filters, station_names, data_starttime)
-        #TODO: this is currently broken because of obspy or something :(
-        #write_to_mseed(pre_processed_stations, data_starttime)#Done so the pre processed data can be filtered with different filters at a later date.
 
         datestr = str(data_starttime.year) + "." + str(data_starttime.month) + "." + str(data_starttime.day)
         debug_print("Wrote to files " + datestr + " at: " + str(UTCDateTime()))
