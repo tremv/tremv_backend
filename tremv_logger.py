@@ -344,11 +344,14 @@ def main():
 
     while(True):
         #TODO: this should go on a seperate thread in the while loop...
+        """
         response_filename = "response.xml"
         if(os.path.exists(response_filename) == False):
             xml = requests.get(config["response_address"])
             f = open(response_filename, "w")
             f.write(xml.text)
+            f.close()
+        """
 
         #   NOTE(thordur):  Here we figure out how many seconds are to the next minute using the system clock.
         #                   Would use time.time_ns() but it is only available in python 3.7 and up.
@@ -373,7 +376,7 @@ def main():
         inv = obspy.read_inventory("response.xml")
 
         received_stations = seedlink_connection.get_waveforms(config["network"], config["station_wildcard"], config["location_wildcard"], config["selectors"], data_starttime, fetch_starttime)
-        received_stations.remove_response(inventory=inv)
+        #received_stations.remove_response(inventory=inv)
 
         debug_print(str(UTCDateTime() - fetch_starttime))
 
