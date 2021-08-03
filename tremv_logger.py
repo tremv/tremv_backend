@@ -353,6 +353,8 @@ def main():
             f.close()
         """
 
+        #inv = obspy.read_inventory("response.xml")
+
         #   NOTE(thordur):  Here we figure out how many seconds are to the next minute using the system clock.
         #                   Would use time.time_ns() but it is only available in python 3.7 and up.
         sleeptime_in_sec = (min_in_ns - (int(time.time() * SEC_TO_NANO) % min_in_ns)) / SEC_TO_NANO
@@ -372,8 +374,6 @@ def main():
 
         debug_print("\nFetch start time: " + str(fetch_starttime))
         debug_print("Data fetch duration: ", end="")
-
-        inv = obspy.read_inventory("response.xml")
 
         received_stations = seedlink_connection.get_waveforms(config["network"], config["station_wildcard"], config["location_wildcard"], config["selectors"], data_starttime, fetch_starttime)
         #received_stations.remove_response(inventory=inv)
