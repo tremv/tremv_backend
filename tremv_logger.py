@@ -5,7 +5,6 @@
 import os
 import sys
 import time
-import thread
 import requests#for fsdn request
 import obspy
 from obspy.clients.seedlink.basic_client import Client
@@ -407,7 +406,6 @@ def main():
         if(stamp != config_stamp):
             config = common.read_tremv_config(config_filename)
             config_stamp = stamp
-
 
 if __name__ == "__main__":
     main()
