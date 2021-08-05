@@ -194,20 +194,30 @@ class api(object):
                 if(f in self.config["filters"]):
                     folder_path = common.logger_output_path(date)
                     filename = folder_path + common.generate_tremvlog_filename(date, f)
-                    rsam_data = common.read_tremvlog_file(filename)
+                    file_read = False
 
-                    if(not rsam_data):
+                    if(os.path.exists(filename)):
+                        file_timestamp = os.stat(filename).st_mtime
+
+                        sec_in_day = 60*60*24
+                        midnight_timestamp = int(file_timestamp) // sec_in_day * sec_in_day#integer division with sec in day to get the days since epoch, then multiply back to get the timestamp at midnight
+
+                        #if the file wasn't created within 30min from midnight, we default to the tremlogs
+                        if(file_timestamp - midnight_timestamp < 60*30):
+                            file_read = True
+                            rsam_data = common.read_tremvlog_file(filename)
+                            if(do_log_transform):
+                                for name in station_names:
+                                    if(name in rsam_data):
+                                        for k in range(0, len(rsam_data[name])):
+                                            if(rsam_data[name][k] > 0.0):
+                                                rsam_data[name][k] = math.log(rsam_data[name][k])*1000
+
+                    if(file_read == False):
                         tremlog = pytremget.tremlog_get(date.year, date.month, date.day, log_transform=do_log_transform)
                         #TODO: maybe not the most robust thing...
                         std_filter_index = self.standard_filters.index(f)
                         rsam_data = tremlog.values_z[std_filter_index]
-                    else:
-                        if(do_log_transform):
-                            for name in station_names:
-                                if(name in rsam_data):
-                                    for k in range(0, len(rsam_data[name])):
-                                        if(rsam_data[name][k] > 0.0):
-                                            rsam_data[name][k] = math.log(rsam_data[name][k])*1000
 
                     for name in station_names:
                         if(name in rsam_data):
