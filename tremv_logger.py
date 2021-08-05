@@ -18,6 +18,7 @@ import datetime
 """
 def debug_print(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+    print(*args, file=sys.stdout, **kwargs)
 
 
 """ Returns a list of station names from obspy trace object.
@@ -335,7 +336,7 @@ def main():
     config = common.read_tremv_config(config_filename)
     config_stamp = os.stat(config_filename).st_mtime
 
-    seedlink_connection = Client(config["server"], config["port"], 5, False)
+    seedlink_connection = Client(config["seedlink_address"], config["seedlink_port"], 5, False)
 
     SEC_TO_NANO = 1000*1000*1000
     min_in_ns = 60 * SEC_TO_NANO
@@ -343,18 +344,6 @@ def main():
     print("NOTE: the logger starts processing at minute boundaries.")
 
     while(True):
-        #TODO: this should go on a seperate thread in the while loop...
-        """
-        response_filename = "response.xml"
-        if(os.path.exists(response_filename) == False):
-            xml = requests.get(config["response_address"])
-            f = open(response_filename, "w")
-            f.write(xml.text)
-            f.close()
-        """
-
-        #inv = obspy.read_inventory("response.xml")
-
         #   NOTE(thordur):  Here we figure out how many seconds are to the next minute using the system clock.
         #                   Would use time.time_ns() but it is only available in python 3.7 and up.
         sleeptime_in_sec = (min_in_ns - (int(time.time() * SEC_TO_NANO) % min_in_ns)) / SEC_TO_NANO
@@ -363,7 +352,6 @@ def main():
         fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
 
-        filters = config["filters"]
         log_path = common.logger_output_path(fetch_starttime)
 
         if(os.path.exists(log_path) == False):
@@ -376,11 +364,11 @@ def main():
         debug_print("Data fetch duration: ", end="")
 
         received_stations = seedlink_connection.get_waveforms(config["network"], config["station_wildcard"], config["location_wildcard"], config["selectors"], data_starttime, fetch_starttime)
-        #received_stations.remove_response(inventory=inv)
 
         debug_print(str(UTCDateTime() - fetch_starttime))
 
         station_names = config["station_names"]
+        filters = config["filters"]
         rsam_st = UTCDateTime()
 
         #TODO(thordur): Try to abstract this part because we could use it to spawn a process when we want to
