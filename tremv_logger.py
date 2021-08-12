@@ -13,24 +13,14 @@ from obspy import UTCDateTime
 import tremv_common as common
 
 import datetime
+import threading
 
 
 """ Prints debugging info to stderr
 """
 def debug_print(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
-    print(*args, file=sys.stdout, **kwargs)
-
-
-""" Returns a list of station names from obspy trace object.
-"""
-def list_station_names(stations):
-    result = []
-
-    for trace in stations:
-        result.append(trace.stats["station"])
-
-    return(result)
+    #print(*args, file=sys.stdout, **kwargs)
 
 
 """ Apply lowpass filter to the data and downsample it from 100 points per minute
@@ -39,10 +29,11 @@ def list_station_names(stations):
 def process_station_data(stations):
     result = stations.copy()
 
-    # This is done in order to avoid the phase shift in the decimation process
-    result.filter("lowpass", freq=20.0, corners=2, zerophase=True)# this is super slow!
+    #This is done in order to avoid the phase shift in the decimation process
+    #It is only 10hz because otherwise we run in to aliasing, since we decimate after(nyquist-shannon theorem)
+    result.filter("lowpass", freq=10.0, corners=2, zerophase=True)# this is super slow!
  
-    # Down sample from 100hz to 20hz (100/5 = 20), no filter to avoid phase shift
+    #Down sample from 100hz to 20hz (100/5 = 20), no filter to avoid phase shift
     for trace in result:
         trace.decimate(5, no_filter=True)
  
@@ -92,7 +83,7 @@ def rsam_processing(per_filter_filtered_stations, filters, station_names, receiv
         for name in station_names:
             result[i][name] = 0.0
 
-    # Here we accumulate points
+    #Here we accumulate points
     for i in range(0, len(filters)):
         station_rsam_dict = result[i]
  
@@ -331,7 +322,6 @@ def read_mseed_from_dir(path):
 
     return(stations)
 
-
 def main():
     config_filename = "tremv_config.json"
     config = common.read_tremv_config(config_filename)
@@ -340,7 +330,8 @@ def main():
     seedlink = seedlinkClient(config["seedlink_address"], config["seedlink_port"], 5, False)
     fdsn = fdsnClient(config["fdsn_address"])
 
-    print("Getting response data...")
+    #TODO: schedule this every hour or something?
+    print("getting response inventory...")
     response_inventory = fdsn.get_stations(network=config["network"], station="*", level="response")#TODO station wildcard from config file?
 
     SEC_TO_NANO = 1000*1000*1000
@@ -350,6 +341,8 @@ def main():
 
     while(True):
         #   NOTE(thordur):  Here we figure out how many seconds are to the next minute using the system clock.
+        #                   We convert time.time()(which gives us seconds since unix epoch) to nano seconds because
+        #                   this is the highest resolution we can get from python.
         #                   Would use time.time_ns() but it is only available in python 3.7 and up.
         sleeptime_in_sec = (min_in_ns - (int(time.time() * SEC_TO_NANO) % min_in_ns)) / SEC_TO_NANO
         time.sleep(sleeptime_in_sec)
@@ -357,23 +350,31 @@ def main():
         fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
 
+        #TODO:  with a different file format we don't need to keep accounting of the stations for the whole day,
+        #       we just write what we get from the server
+        stations_in_network = []
+
+        #TODO: make this a little nicer
+        fdsn_station_metadata = fdsn.get_stations(network=config["network"], station="*", starttime=data_starttime, endtime=fetch_starttime)
+        for s in fdsn_station_metadata.networks[0]:
+            stations_in_network.append(s.code)
+
         log_path = common.logger_output_path(fetch_starttime)
 
         if(os.path.exists(log_path) == False):
             os.makedirs(log_path)
 
-        log_file = open(log_path + "debug" + str(fetch_starttime.day) + ".log", "a")
-        sys.stderr = log_file
-
         debug_print("\nFetch start time: " + str(fetch_starttime))
         debug_print("Data fetch duration: ", end="")
 
-        received_stations = seedlink.get_waveforms(config["network"], config["station_wildcard"], config["location_wildcard"], config["selectors"], data_starttime, fetch_starttime)
-        received_stations.remove_response(inventory=response_inventory)
+        received_station_waveforms = seedlink.get_waveforms(config["network"], config["station_wildcard"], config["location_wildcard"], config["selectors"], data_starttime, fetch_starttime)
+        response_start = time.time()
+        received_station_waveforms.remove_response(inventory=response_inventory)
+        response_end = time.time()
 
         debug_print(str(UTCDateTime() - fetch_starttime))
+        debug_print("reponse time: " + str(response_end - response_start))
 
-        station_names = config["station_names"]
         filters = config["filters"]
         rsam_st = UTCDateTime()
 
@@ -381,22 +382,18 @@ def main():
         #               lazy fill data that isn't there. Then when a we get a request for data that hasn't been
         #               filtered yet with the requested filter, we can spawn it and then deliver the data
         #               when it is ready...
-        received_station_names = list_station_names(received_stations)
-        pre_processed_stations = process_station_data(received_stations)
+        pre_processed_stations = process_station_data(received_station_waveforms)
         per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
 
-        rsam_results = rsam_processing(per_filter_filtered_stations, filters, station_names, received_station_names)
+        rsam_results = rsam_processing(per_filter_filtered_stations, filters, stations_in_network, received_station_names)
 
         debug_print("Rsam calculation duration: " + str(UTCDateTime() - rsam_st))
 
-        write_tremvlog_file(rsam_results, filters, station_names, data_starttime)
+        write_tremvlog_file(rsam_results, filters, stations_in_network, data_starttime)
 
         datestr = str(data_starttime.year) + "." + str(data_starttime.month) + "." + str(data_starttime.day)
         debug_print("Wrote to files " + datestr + " at: " + str(UTCDateTime()))
         debug_print("Sleeping until next minute...")
-
-        #@UN-COMMENT
-        log_file.close()
 
         #reload the config file if it has changed
         stamp = os.stat(config_filename).st_mtime
