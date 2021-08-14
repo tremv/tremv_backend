@@ -367,6 +367,8 @@ def main():
         debug_print("\nFetch start time: " + str(fetch_starttime))
         debug_print("Data fetch duration: ", end="")
 
+        #TODO: replicate the obspy get_waveforms function so we can skip the location parameter as it doesn't work and is manditory in the obspy function
+        #received_station_waveforms = fdsn.get_waveforms(network="VI", station="???", location="--", channel="HHZ", starttime=before, endtime=now)
         received_station_waveforms = seedlink.get_waveforms(config["network"], config["station_wildcard"], config["location_wildcard"], config["selectors"], data_starttime, fetch_starttime)
         response_start = time.time()
         received_station_waveforms.remove_response(inventory=response_inventory)
