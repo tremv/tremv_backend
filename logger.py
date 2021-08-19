@@ -5,15 +5,13 @@
 import os
 import sys
 import time
-import requests#for fsdn request
+import schedule
+import netCDF4 as netcdf
 import obspy
 from obspy.clients.seedlink.basic_client import Client as seedlinkClient
 from obspy.clients.fdsn import Client as fdsnClient
 from obspy import UTCDateTime
-import tremv_common as common
-
-import datetime
-import threading
+import common
 
 
 """ Prints debugging info to stderr
@@ -322,42 +320,29 @@ def read_mseed_from_dir(path):
 
     return(stations)
 
-def main():
-    config_filename = "tremv_config.json"
-    config = common.read_tremv_config(config_filename)
-    config_stamp = os.stat(config_filename).st_mtime
+#TODO: the name 'network' in the config file is ambiguous
+class program:
+    def __init__(self):
+        self.config = common.read_tremv_config("config.json")
+        self.seedlink = seedlinkClient(self.config["seedlink_address"], self.config["seedlink_port"], 5, False)
+        self.fdsn = fdsnClient(self.config["fdsn_address"])
 
-    seedlink = seedlinkClient(config["seedlink_address"], config["seedlink_port"], 5, False)
-    fdsn = fdsnClient(config["fdsn_address"])
+        #TODO: get response file every day?
+        print("getting response inventory...")
+        self.response_inventory = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")#TODO station wildcard from config file?
 
-    #TODO: schedule this every hour or something?
-    print("getting response inventory...")
-    response_inventory = fdsn.get_stations(network=config["network"], station="*", level="response")#TODO station wildcard from config file?
-
-    SEC_TO_NANO = 1000*1000*1000
-    min_in_ns = 60 * SEC_TO_NANO
-
-    print("NOTE: the logger starts processing at minute boundaries.")
-
-    while(True):
-        #   NOTE(thordur):  Here we figure out how many seconds are to the next minute using the system clock.
-        #                   We convert time.time()(which gives us seconds since unix epoch) to nano seconds because
-        #                   this is the highest resolution we can get from python.
-        #                   Would use time.time_ns() but it is only available in python 3.7 and up.
-        sleeptime_in_sec = (min_in_ns - (int(time.time() * SEC_TO_NANO) % min_in_ns)) / SEC_TO_NANO
-        time.sleep(sleeptime_in_sec)
-
+    def main(self):
+        self.config = common.read_tremv_config("tremv_config.json")
         fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
 
-        #TODO:  with a different file format we don't need to keep accounting of the stations for the whole day,
-        #       we just write what we get from the server
         stations_in_network = []
 
         #TODO: make this a little nicer
-        fdsn_station_metadata = fdsn.get_stations(network=config["network"], station="*", starttime=data_starttime, endtime=fetch_starttime)
+        fdsn_station_metadata = self.fdsn.get_stations(network=self.config["network"], station="*", starttime=data_starttime, endtime=fetch_starttime)
         for s in fdsn_station_metadata.networks[0]:
-            stations_in_network.append(s.code)
+            if(s not in self.config["station_blacklist"]):
+                stations_in_network.append(s.code)
 
         log_path = common.logger_output_path(fetch_starttime)
 
@@ -367,21 +352,14 @@ def main():
         debug_print("\nFetch start time: " + str(fetch_starttime))
         debug_print("Data fetch duration: ", end="")
 
-        received_station_waveforms = seedlink.get_waveforms(config["network"], config["station_wildcard"], config["location_wildcard"], config["selectors"], data_starttime, fetch_starttime)
-        response_start = time.time()
-        received_station_waveforms.remove_response(inventory=response_inventory)
-        response_end = time.time()
+        received_station_waveforms = self.seedlink.get_waveforms(self.config["network"], self.config["station_wildcard"], self.config["location_wildcard"], self.config["selectors"], data_starttime, fetch_starttime)
+        received_station_waveforms.remove_response(inventory=self.response_inventory)
 
         debug_print(str(UTCDateTime() - fetch_starttime))
-        debug_print("reponse time: " + str(response_end - response_start))
 
-        filters = config["filters"]
+        filters = self.config["filters"]
         rsam_st = UTCDateTime()
 
-        #TODO(thordur): Try to abstract this part because we could use it to spawn a process when we want to
-        #               lazy fill data that isn't there. Then when a we get a request for data that hasn't been
-        #               filtered yet with the requested filter, we can spawn it and then deliver the data
-        #               when it is ready...
         pre_processed_stations = process_station_data(received_station_waveforms)
         per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
 
@@ -395,12 +373,15 @@ def main():
         debug_print("Wrote to files " + datestr + " at: " + str(UTCDateTime()))
         debug_print("Sleeping until next minute...")
 
-        #reload the config file if it has changed
-        stamp = os.stat(config_filename).st_mtime
-
-        if(stamp != config_stamp):
-            config = common.read_tremv_config(config_filename)
-            config_stamp = stamp
-
 if __name__ == "__main__":
-    main()
+    p = program()
+    p.main()
+
+    """
+    scheduler = schedule.Scheduler()
+    scheduler.every().minute.at(":00").do(p.main)
+
+    while(True):
+        scheduler.run_pending()
+        time.sleep(1)
+    """
