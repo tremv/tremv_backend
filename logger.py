@@ -375,13 +375,10 @@ class program:
 
 if __name__ == "__main__":
     p = program()
-    p.main()
 
-    """
     scheduler = schedule.Scheduler()
     scheduler.every().minute.at(":00").do(p.main)
 
     while(True):
         scheduler.run_pending()
         time.sleep(1)
-    """
