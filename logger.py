@@ -332,7 +332,7 @@ class program:
         self.response_inventory = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")#TODO station wildcard from config file?
 
     def main(self):
-        self.config = common.read_tremv_config("tremv_config.json")
+        self.config = common.read_tremv_config("config.json")
         fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
 
