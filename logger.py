@@ -74,24 +74,20 @@ def trace_average(trace):
     an array of dictonaries whos length is equal to the number of filters provided.
     Each dictionary uses station names as keys and the corrsponding average is the value.
 """
-def rsam_processing(per_filter_filtered_stations, filters, station_names, received_station_names):
+def rsam_processing(per_filter_filtered_stations, filters, station_names):
     result = [{} for i in filters]
 
     for i in range(0, len(filters)):
         for name in station_names:
-            result[i][name] = 0.0
+            filtered_stations = per_filter_filtered_stations[i]
+            rsam_stations_dict = result[i]
 
-    #Here we accumulate points
-    for i in range(0, len(filters)):
-        station_rsam_dict = result[i]
- 
-        for name in station_names:
-            if(name in received_station_names):
-                trace = per_filter_filtered_stations[i][name]
+            rsam_stations_dict[name] = 0.0
+
+            if(name in filtered_stations):
+                trace = filtered_stations[name]
                 average = trace_average(trace)
-                station_rsam_dict[name] = average
-            else:
-                station_rsam_dict[name] = 0.0
+                rsam_stations_dict[name] = average
 
     return(result)
 
@@ -298,38 +294,20 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
         debug_print("Removed stations: " + str(removed_stations))
 
 
-""" Accumulate traces in a station that is found in a directory, handle gaps in
-    data and append the output to a list of stations.
-"""
-def read_mseed_from_dir(path):
-    stations = obspy.Stream()
-    files = os.listdir(os.getcwd() + "/" + path)
-
-    for f in files:
-        station_in = obspy.read(path + "/" + f)
-        trace_acc = station_in[0]
-
-        #starts from one so we can splice the traces together with the + operator
-        for i in range(1, len(station_in)):
-            trace = station_in[i]
-            trace_acc = trace_acc + trace
-
-        #This creates a Stream object with one trace object that is gapless
-        gapless_stream = trace_acc.split()
-        stations.append(gapless_stream[0])
-
-    return(stations)
-
 #TODO: the name 'network' in the config file is ambiguous
 class program:
     def __init__(self):
         self.config = common.read_tremv_config("config.json")
         self.seedlink = seedlinkClient(self.config["seedlink_address"], self.config["seedlink_port"], 5, False)
         self.fdsn = fdsnClient(self.config["fdsn_address"])
+        self.response_inventory = None
+        self.fetch_inventory()
 
-        #TODO: get response file every day?
+    #TODO: schedule this function to execute every day on a seperate thread
+    def fetch_inventory(self):
         print("getting response inventory...")
-        self.response_inventory = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")#TODO station wildcard from config file?
+        inventory = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")#TODO station wildcard from config file?
+        self.response_inventory = inventory
 
     def main(self):
         self.config = common.read_tremv_config("config.json")
@@ -352,7 +330,8 @@ class program:
         debug_print("\nFetch start time: " + str(fetch_starttime))
         debug_print("Data fetch duration: ", end="")
 
-        received_station_waveforms = self.seedlink.get_waveforms(self.config["network"], self.config["station_wildcard"], self.config["location_wildcard"], self.config["selectors"], data_starttime, fetch_starttime)
+        #TODO: subscribe to the seedlink server instead of doing this??
+        received_station_waveforms = self.seedlink.get_waveforms(self.config["network"], self.config["station_wildcard"], self.config["location_wildcard"], self.config["channels"], data_starttime, fetch_starttime)
         received_station_waveforms.remove_response(inventory=self.response_inventory)
 
         debug_print(str(UTCDateTime() - fetch_starttime))
@@ -363,7 +342,7 @@ class program:
         pre_processed_stations = process_station_data(received_station_waveforms)
         per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
 
-        rsam_results = rsam_processing(per_filter_filtered_stations, filters, stations_in_network, received_station_names)
+        rsam_results = rsam_processing(per_filter_filtered_stations, filters, stations_in_network)
 
         debug_print("Rsam calculation duration: " + str(UTCDateTime() - rsam_st))
 
@@ -371,11 +350,11 @@ class program:
 
         datestr = str(data_starttime.year) + "." + str(data_starttime.month) + "." + str(data_starttime.day)
         debug_print("Wrote to files " + datestr + " at: " + str(UTCDateTime()))
-        debug_print("Sleeping until next minute...")
 
 if __name__ == "__main__":
     p = program()
 
+    #TODO: do the tasks queue up if they take longer than a minute for example?
     scheduler = schedule.Scheduler()
     scheduler.every().minute.at(":00").do(p.main)
 
