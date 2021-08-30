@@ -6,13 +6,26 @@ import os
 import json
 import datetime
 
+"""
+input: 
+data: obspy Stream
+inv: obspy Inventory
 
-def read_tremv_config(filename):
-    config_file = open(filename, "r")
-    result = json.loads(config_file.read())
-    config_file.close()
+output:
+response corrected(not fully...) copy of the data
+"""
+def stream_counts_to_um(data, inv):
+    import obspy
+    result = data.copy()
 
-    return(result)
+    for trace in result:
+        name = trace.stats.station
+        seed_identifier = trace.stats.network + "." + name + ".." + "HHZ"
+        response = self.response_inventory.get_response(seed_identifier, fetch_starttime)
+        counts_to_um = response.instrument_sensitivity.value / 1000000
+        trace.data /= counts_to_um
+
+    return result
 
 
 def logger_output_path(date):

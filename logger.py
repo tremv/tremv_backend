@@ -12,6 +12,7 @@ from obspy.clients.seedlink.basic_client import Client as seedlinkClient
 from obspy.clients.fdsn import Client as fdsnClient
 from obspy import UTCDateTime
 import common
+import config
 
 
 """ Prints debugging info to stderr
@@ -61,13 +62,9 @@ def apply_bandpass_filters(traces, filters):
     NOTE: This function assumes the given trace is 1 minute worth of data.
 """
 def trace_average(trace):
-    value_sum = 0
     pts_per_minute = int(trace.stats.sampling_rate * 60)
 
-    for point in trace.data:
-        value_sum += abs(point)
-
-    return(value_sum/pts_per_minute)
+    return(sum(abs(trace.data))/pts_per_minute)
 
 
 """ Averages values for a given station over a minute and prepares the averages as
@@ -294,10 +291,13 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp):
         debug_print("Removed stations: " + str(removed_stations))
 
 
+#TODO:  there is an unchecked assumption here that each trace in the recieved waveforms includes only one station,
+#       which seems to be true, but we never actually verify it...
+
 #TODO: the name 'network' in the config file is ambiguous
 class program:
     def __init__(self):
-        self.config = common.read_tremv_config("config.json")
+        self.config = config.config("config.json")
         self.seedlink = seedlinkClient(self.config["seedlink_address"], self.config["seedlink_port"], 5, False)
         self.fdsn = fdsnClient(self.config["fdsn_address"])
         self.response_inventory = None
@@ -310,13 +310,16 @@ class program:
         self.response_inventory = inventory
 
     def main(self):
-        self.config = common.read_tremv_config("config.json")
+        self.config.reload()
         fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
 
         stations_in_network = []
 
-        #TODO: make this a little nicer
+        #TODO:  make this a little nicer
+        #TODO:  The station regex isn't consistent with the config, so what do we do?
+        #       Maybe we just don't have a station regex and always ask for all stations and then just exclude
+        #       the once in on the blacklist?
         fdsn_station_metadata = self.fdsn.get_stations(network=self.config["network"], station="*", starttime=data_starttime, endtime=fetch_starttime)
         for s in fdsn_station_metadata.networks[0]:
             if(s not in self.config["station_blacklist"]):
@@ -332,7 +335,6 @@ class program:
 
         #TODO: subscribe to the seedlink server instead of doing this??
         received_station_waveforms = self.seedlink.get_waveforms(self.config["network"], self.config["station_wildcard"], self.config["location_wildcard"], self.config["channels"], data_starttime, fetch_starttime)
-        received_station_waveforms.remove_response(inventory=self.response_inventory)
 
         debug_print(str(UTCDateTime() - fetch_starttime))
 
@@ -340,8 +342,15 @@ class program:
         rsam_st = UTCDateTime()
 
         pre_processed_stations = process_station_data(received_station_waveforms)
-        per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
 
+        for trace in received_station_waveforms:
+            name = trace.stats.station
+            seed_identifier = self.config["network"] + "." + name + ".." + self.config["channels"]
+            response = self.response_inventory.get_response(seed_identifier, fetch_starttime)
+            counts_to_um = response.instrument_sensitivity.value / 1000000
+            trace.data /= counts_to_um
+
+        per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
         rsam_results = rsam_processing(per_filter_filtered_stations, filters, stations_in_network)
 
         debug_print("Rsam calculation duration: " + str(UTCDateTime() - rsam_st))

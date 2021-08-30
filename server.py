@@ -6,14 +6,24 @@ import os
 import sys
 import math
 import datetime
-import tremv_common as common
+import common
+import config
 
 class api(object):
     def __init__(self):
-        self.config_stamp = 0
-        self.config_filename = "tremv_config.json"
-        self.config = {}
         self.standard_filters = [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]]
+        self.config = config.config("config.json")
+        self.inventory_filename = "inv.xml"
+        self.inventory = None
+
+        print("Getting inventory file...")
+        if(os.path.exists(self.inventory_filename)):
+            self.inventory = obspy.read_inventory(self.inventory_filename)
+        else:
+            fdsn = fdsnClient(self.config["fdsn_address"])
+            inv = fdsn.get_stations(network=self.config["network"], station="*", level="response")
+            inv.write(self.inventory_filename, format="STATIONXML")
+            self.inventory = inv
 
     def jsonResult(self, filters):
         result = {}
@@ -28,25 +38,12 @@ class api(object):
         return result
 
 
-    """ Checks if the file timestamp has changed for the config file,
-        and if so it reloads it. the conifguration dictionary is then returned.
-    """
-    def reload_config(self):
-        stamp = os.stat(self.config_filename).st_mtime
-
-        if(stamp != self.config_stamp):
-            self.config = common.read_tremv_config(self.config_filename)
-            self.config_stamp = stamp
-        
-        return(self.config)
-
-
     """ Return list of station names and a list of filters
     """
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def metadata(self):
-        self.reload_config()
+        self.config.reload()
         return({"filters": self.config["filters"], "station_names": self.config["station_names"]})
 
 
@@ -60,7 +57,7 @@ class api(object):
         result = []
         query = cherrypy.request.json
 
-        self.reload_config()
+        self.config.reload()
 
         station_names = self.config["station_names"]
         filters = self.config["filters"]
@@ -125,7 +122,7 @@ class api(object):
         #TODO: include station_names in response, for example if we ask for stations that aren't available or whatever
         query = cherrypy.request.json
 
-        self.reload_config()
+        self.config.reload()
 
         station_names = self.config["station_names"]
         filters = self.config["filters"]
