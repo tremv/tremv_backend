@@ -1,6 +1,5 @@
 #Author: Þórður Ágúst Karlsson
 
-import pytremget
 import cherrypy
 import os
 import sys
@@ -8,22 +7,24 @@ import math
 import datetime
 import common
 import config
+import pytremlog#@IMO stuff
 
 class api(object):
     def __init__(self):
         self.standard_filters = [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]]
         self.config = config.config("config.json")
-        self.inventory_filename = "inv.xml"
-        self.inventory = None
+        self.fdsn = fdsnClient(self.config["fdsn_address"])
+        self.response_inv_filename = "inv.xml"
+        self.response_inv = None
 
-        print("Getting inventory file...")
-        if(os.path.exists(self.inventory_filename)):
-            self.inventory = obspy.read_inventory(self.inventory_filename)
+        #we just need to do this once so we can get response info for old data
+        print("Getting response_inv file...")
+        if(os.path.exists(self.response_inv_filename)):
+            self.response_inv = obspy.read_response_inv(self.response_inv_filename)
         else:
-            fdsn = fdsnClient(self.config["fdsn_address"])
             inv = fdsn.get_stations(network=self.config["network"], station="*", level="response")
-            inv.write(self.inventory_filename, format="STATIONXML")
-            self.inventory = inv
+            inv.write(self.response_inv_filename, format="STATIONXML")
+            self.response_inv = inv
 
     def jsonResult(self, filters):
         result = {}
@@ -119,7 +120,6 @@ class api(object):
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
     def range(self):
-        #TODO: include station_names in response, for example if we ask for stations that aren't available or whatever
         query = cherrypy.request.json
 
         self.config.reload()
@@ -211,7 +211,7 @@ class api(object):
                                                 rsam_data[name][k] = math.log(rsam_data[name][k])*1000
 
                     if(file_read == False):
-                        tremlog = pytremget.tremlog_get(date.year, date.month, date.day, log_transform=do_log_transform)
+                        tremlog = pytremlog.get(date.year, date.month, date.day, log_transform=do_log_transform)
                         #TODO: maybe not the most robust thing...
                         std_filter_index = self.standard_filters.index(f)
                         rsam_data = tremlog.values_z[std_filter_index]
