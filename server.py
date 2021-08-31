@@ -8,13 +8,16 @@ import datetime
 import common
 import config
 import pytremlog#@IMO stuff
+import obspy
+from obspy.clients.fdsn import Client as fdsnClient
+from obspy import UTCDateTime
 
 class api(object):
     def __init__(self):
         self.standard_filters = [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]]
-        self.config = config.config("config.json")
+        self.config = config.config("config.json")#TODO: environment variable
         self.fdsn = fdsnClient(self.config["fdsn_address"])
-        self.response_inv_filename = "inv.xml"
+        self.response_inv_filename = "inv.xml"#TODO: environment variable
         self.response_inv = None
 
         #we just need to do this once so we can get response info for old data
