@@ -2,8 +2,8 @@ import os
 
 #a wrapper around the json config
 class config:
-    def __init__(self):
-        self.filename = "config.json"
+    def __init__(self, filename):
+        self.filename = filename
         self.stamp = 0
         self.config = None
         self._read()
