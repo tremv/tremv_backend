@@ -1,4 +1,5 @@
 import os
+import json
 
 #a wrapper around the json config
 class config:
