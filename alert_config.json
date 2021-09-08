@@ -1,0 +1,15 @@
+{
+  "sta_length": 3,
+  "lta_length": 20,
+  "trigger_ratio": 1.3,
+  "ramp_min_avg": 2,
+  "ramp_intervals": 4,
+  "min_velocity": 0.3,
+  "station_votes": 6,
+  "percentage_data": 90,
+  "mute_filters": [],
+  "mute_stations": [],
+  "remove_stations": [],
+  "silence_audio": "False",
+  "max_audio_per_hr": 6
+}
