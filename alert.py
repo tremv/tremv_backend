@@ -3,6 +3,7 @@
 
 import os
 import common
+import numpy
 from obspy import UTCDateTime
 
 
@@ -10,6 +11,9 @@ class ClassAlertInfo:
 
     def __init__(self):
         self.filter_list = []
+        self.lta = {}
+        self.sta = {}
+        self.ramp = {}
         self.ratio_values = {}
         self.station_trigger = {}
         self.filters_triggered = {}
@@ -69,13 +73,14 @@ def define_data_range(windows, time):
 """
 def read_data(filters, data_range, delimeter, station_channel):
 
-    data_dicts = []
+    data_dicts = {}
 
     # reads csv files...
     for i in range(0, len(filters)):
+        filter_name = str(filters[i])
 
         data = {}
-        for j in range(0, len(data_range)):
+        for j in range(0, len(data_range)): # one or two days worth of data
             path = common.logger_output_path(data_range[j])
             file = common.generate_tremvlog_filename(data_range[j], filters[i], station_channel)
             file_path = path+file
@@ -141,7 +146,7 @@ def read_data(filters, data_range, delimeter, station_channel):
                             for n in data2[k]:
                                 data[k].append(n)
 
-        data_dicts.append(data)
+        data_dicts[filter_name] = data
 
     return(data_dicts)
 
@@ -152,9 +157,11 @@ def read_data(filters, data_range, delimeter, station_channel):
 def remove_stat(filters, data_dict, remove_stat):
 
     for i in range(0, len(filters)):
+        filter_name = str(filters[i])
+
         for name in remove_stat:
             try:
-                data_dict[i].pop(name)
+                data_dict[filter_name].pop(name)
             except:
                 pass
 
@@ -164,121 +171,114 @@ def remove_stat(filters, data_dict, remove_stat):
 """ Splits the data dictionaries from read_data() to the appropriate time windows for the STA and LTA.
     Returns a list of two lists--for STA data and LTA data --each containing the list of dictionaries for each filter.
 """
-def split_to_windows(data, sta_length, lta_length):
+def split_data(data, sta_length, lta_length, avg_length, ramp_int, filters):
 
     sta_min = int((sta_length+60)/60) # convert back to min from sec
     lta_min = int((lta_length+60)/60)
 
-    sta_data = []
-    lta_data = []
+    sta_data = {}
+    lta_data = {}
+    ramp_data = {}
+    velocity_data = {}
 
-    for i in range(0, len(data)): # basically is len filter
+    for i in range(0, len(filters)):
+        filter_name = str(filters[i])
         sta_data_dict = {}
         lta_data_dict = {}
+        ramp_data_dict = {}
+        velocity_data_dict = {}
 
-        for name in data[i]:
+        for name in data[filter_name]:
             sta_data_list = []
             lta_data_list = []
+            ramp_data_list = []
 
             for j in range(1, sta_min+1):
-                sta_data_list.append(data[i][name][-j])
+                sta_data_list.append(data[filter_name][name][-j])
             for k in range(1, lta_min+1):
-                lta_data_list.append(data[i][name][-k-sta_min]) # end of sta window - k
+                lta_data_list.append(data[filter_name][name][-k-sta_min]) # end of sta window - k
+            for l in range(1, avg_length*ramp_int+1):
+                ramp_data_list.append(data[filter_name][name][-l])
+            velocity_data_dict[name] = data[filter_name][name][-1]
 
             # assigns data to station and reverses list of data so it's in correct order (earliest to latest)
             sta_data_dict[name] = sta_data_list[::-1]
             lta_data_dict[name] = lta_data_list[::-1]
+            ramp_data_dict[name] = ramp_data_list[::-1]
 
-        sta_data.append(sta_data_dict)
-        lta_data.append(lta_data_dict)
+        sta_data[filter_name] = sta_data_dict
+        lta_data[filter_name] = lta_data_dict
+        ramp_data[filter_name] = ramp_data_dict
+        velocity_data[filter_name] = velocity_data_dict
 
-    return([sta_data, lta_data])
+    AlertInfo.sta = sta_data
+    AlertInfo.lta = lta_data
+    AlertInfo.ramp = ramp_data
+    AlertInfo.current_velocity = velocity_data
 
 
 """ For each station (and each filter), averages RSAM values for each station within long and short windows.
     Returns list of dictionaries (one per filter) of STA and LTA averages for each station.
 """
-def avg_windows(data, data_percent):
+def avg_windows(data_percent, filters):
 
-    for i in range(0, len(data)): # len 2, one for sta one for lta
-        for j in range(0, len(data[i])): # len(sta) and len(lta) should be same -- also length of filters!
-            for name in data[i][j]:
-                list_to_avg = data[i][j][name]
-                original_length = len(list_to_avg)
+    data = [AlertInfo.sta, AlertInfo.lta]
+
+    for i in range(0, len(data)): # len 2, position 0 for sta & position 1 for lta
+        for j in range(0, len(filters)):
+            filter_name = str(filters[j])
+
+            for name in data[i][filter_name]:
+                list_to_avg = data[i][filter_name][name]
                 list_sum = 0
                 length = 0 # length of data to be averaged
 
-                for k in range(0, original_length):
-                    list_sum += list_to_avg[k]
+                for k in range(0, len(list_to_avg)):
+
                     if(int(list_to_avg[k]) != 0):
+                        list_sum += numpy.log(list_to_avg[k])
                         length += 1
 
-                data_percent_used = (length/original_length)*100
+                data_percent_used = (length/len(list_to_avg))*100
+
+                # redefines AlertInfo.sta and AlertInfo.lta list as average (with natural log applied before)
                 if(length != 0 and data_percent_used >= data_percent):
                     avg = list_sum/length
-                    data[i][j][name] = avg
+                    data[i][filter_name][name] = avg
                 else:
-                    data[i][j][name] = None
-
-    return(data)
+                    data[i][filter_name][name] = None
 
 
 """ Calculates sta/lta ratio for each station from avg_windows() data.
     Returns list of dictionaries (one per filter) of the sta/lta ratio at each station.
 """
-def calc_ratio(sta_lta, filters):
-    sta = sta_lta[0]
-    lta = sta_lta[1]
+def calc_ratio(filters):
+
+    sta = AlertInfo.sta
+    lta = AlertInfo.lta
 
     ratio = {}
     for i in range(0, len(filters)):
+        filter_name = str(filters[i])
+
         ratio_dict = {}
-        for name in sta[i]:
-            if(sta[i][name] != None and lta[i][name] != None):
-                ratio_dict[name] = (sta[i][name])/(lta[i][name])
-        ratio[str(filters[i])] = ratio_dict
+
+        for name in sta[filter_name]:
+            if(sta[filter_name][name] != None and lta[filter_name][name] != None):
+                ratio_dict[name] = (sta[filter_name][name])/(lta[filter_name][name])
+        ratio[filter_name] = ratio_dict
 
     AlertInfo.ratio_values = ratio
-
-
-""" Creates dictionary of current RSAM value for each station and filter. (Must be above 0.3 um/s to trigger.)
-"""
-def velocity_check(filters, sta_lta_data):
-
-    sta = sta_lta_data[0]
-    velocities = {}
-
-    for i in range(0, len(filters)):
-        filter_name = str(filters[i])
-        velocity = {}
-
-        for station in sta[i]:
-            velocity[station] = sta[i][station][-1]
-
-        velocities[filter_name] = velocity
-
-    AlertInfo.current_velocity = velocities
 
 
 """ Checks most recent sta ratio values (in ring buffer) to see if most recent is higher than first (or in steps?).
     Checking first value (ratio recorded x minutes earlier) versus current value -- only important for new trigger.
 """
-def make_ramp(sta_length, lta_length, avg_length, ramp_int, filters, sta_lta_data):
+def make_ramp(avg_length, ramp_int, filters):
 
-    sta = sta_lta_data[0]
-    lta = sta_lta_data[1]
-
-    data = {}
-    for i in range(0, len(filters)):
-        filter_name = str(filters[i])
-
-        for station in lta[i]: # lta and sta should have same stations by design (failsafe!)
-            for j in range(0, len(sta[i][station])):
-                lta[i][station].append(sta[i][station][j])
-
-        data[filter_name] = lta[i]
-
+    data = AlertInfo.ramp
     ramp_dict = {}
+
     for name in filters:
         filter_name = str(name)
         ring_buffer_dict = {}
@@ -297,6 +297,7 @@ def make_ramp(sta_length, lta_length, avg_length, ramp_int, filters, sta_lta_dat
 
             ring_buffer_dict[station] = buffer_averages
         ramp_dict[filter_name] = ring_buffer_dict
+
     AlertInfo.ramp_buffer = ramp_dict
 
 
@@ -318,16 +319,16 @@ def stat_voting(trigger_ratio, min_velocity):
         trig_vote = 0
         for name in ratios[filter_name]:
 
-            # checks that sta/lta ratio above trigger ratio
-            if(ratios[filter_name][name] >= trigger_ratio):
+            # checks that most recent velocity is at or above velocity threshold
+            if(velocities[filter_name][name] >= min_velocity):
 
-                # checks that most recent velocity is at or above velocity threshold
-                if(velocities[filter_name][name] >= min_velocity):
+                # checks that sta/lta ratio above trigger ratio
+                if(ratios[filter_name][name] >= trigger_ratio):
 
                     i = 1
                     while i < len(ramp_dict[filter_name][name]):
 
-                        # checks that each most recent ramp interval average is higher than previous
+                        # checks that each most recent ramps interval average is higher than previous
                         if(ramp_dict[filter_name][name][-i] > ramp_dict[filter_name][name][-i - 1]):
                             i += 1
 
@@ -385,7 +386,7 @@ def trigger(vote, votes_needed):
 def catalog_new_event(current_time, current_filter, current_info, current_stations, line_one, space):
 
     # defines file path of new catalog (or of existing catalog) based on current time
-    cat_path = ("event_catalog/" + str(current_time.year) + "/")
+    cat_path = ("tremor_catalog/" + str(current_time.year) + "/")
     if (os.path.exists(cat_path) == False):
         os.makedirs(cat_path)
 
@@ -422,7 +423,7 @@ def catalog_new_event(current_time, current_filter, current_info, current_statio
 
     write_filter = str(current_filter).replace(" ", "")
 
-    # alloted space for written variables (somewhat arbitrary, but nice for reading)
+    # allotted space for written variables (somewhat arbitrary, but nice for reading)
     id_space = (7 - len(str(eventID))) * " " + space
     time_space = (27 - len(str(current_time))) * " " + space
     filter_space = (12 - len(str(write_filter))) * " " + space
@@ -444,7 +445,7 @@ def catalog_edit_event(current_filter, current_stations, alert_on, line_one):
     eventID = AlertInfo.current_eventID[current_filter][0]
 
     # must do this in case the file with currently triggered event is different month or year!
-    cat_path = ("event_catalog/" + str(time.year) + "/")
+    cat_path = ("tremor_catalog/" + str(time.year) + "/")
     if(os.path.exists(cat_path) == False):
         os.makedirs(cat_path)
 
@@ -622,9 +623,10 @@ def initiate_audio_alarm(timestamp):
 def check_alert_config(sta, lta, ratio, ramp_min_avg, ramp_int, min_vel, votes, percent, stat_remove, stat_mute,
                        filt_mute, silence, max_audio):
 
-    if((sta+lta) < (ramp_min_avg*ramp_int)):
+    if(type(max_audio) != int and max_audio < 1):
         print("ALERT Error: Configuration error code 001. "
-              "(ramp_intervals) * (ramp_min_avg) must not exceed (sta_length) + (sta_length).")
+              "Maximum audio alarms per hour (max_audio_per_hr) must be an integer above zero. If you would like to "
+              "silence the tremv-ALERT module, please set the (silence_audio) variable to 'True'.")
     if(type(ratio) != float and ratio <= 0):
         print("ALERT Error: Configuration error code 002. "
               "STA/LTA ratio must be a float-type variable that is greater than zero.")
@@ -660,10 +662,6 @@ def check_alert_config(sta, lta, ratio, ramp_min_avg, ramp_int, min_vel, votes, 
     if(silence != "True" and silence != "False"):
         print("ALERT Error: Configuration error code 011. The (silence_audio) variable must be a string with a Boolean "
               "'True' to silence the audio alarm, or 'False' to allow the alarm to ring.")
-    if(type(max_audio) != int and max_audio < 1):
-        print("ALERT Error: Configuration error code 012. "
-              "Maximum audio alarms per hour (max_audio_per_hr) must be an integer above zero. If you would like to "
-              "silence the tremv-ALERT module, please set the (silence_audio) variable to 'True'.")
 
 
 def main(starttime, logger_filters, channel):
@@ -691,18 +689,15 @@ def main(starttime, logger_filters, channel):
     time_range = define_data_range(time_windows, starttime)
     data_dictionary = read_data(logger_filters, time_range, delim, channel)
     updated_data_dict = remove_stat(logger_filters, data_dictionary, alert_config["remove_stations"])
-    split_data = split_to_windows(updated_data_dict, sta_len, lta_len)
-
-    # checks that corrected velocity values are
-    velocity_check(logger_filters, split_data)
+    split_data(updated_data_dict, sta_len, lta_len, alert_config["ramp_min_avg"], alert_config["ramp_intervals"],
+               logger_filters)
 
     # checks that ramp exists before eruption
-    make_ramp(alert_config["sta_length"], alert_config["lta_length"], alert_config["ramp_min_avg"],
-              alert_config["ramp_intervals"], logger_filters, split_data)
+    make_ramp(alert_config["ramp_min_avg"], alert_config["ramp_intervals"], logger_filters)
 
     # checks that sta/lta trigger ratio is satisfied
-    avg_data = avg_windows(split_data, alert_config["percentage_data"])
-    calc_ratio(avg_data, logger_filters)
+    avg_windows(alert_config["percentage_data"], logger_filters)
+    calc_ratio(logger_filters)
 
     voting = stat_voting(alert_config["trigger_ratio"], alert_config["min_velocity"])
     trigger(voting, alert_config["station_votes"])
