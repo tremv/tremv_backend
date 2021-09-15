@@ -1,0 +1,11 @@
+{
+	"server": "",
+	"port": 18000,
+	"network": "",
+	"station_wildcard": "???",
+	"location_wildcard": "??",
+	"channels": "HHZ",
+	"filters": [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]],
+	"station_blacklist": [],
+	"alert_on": "True"
+}
