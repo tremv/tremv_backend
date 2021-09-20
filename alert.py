@@ -18,6 +18,7 @@ class ClassAlertInfo:
         self.station_trigger = {}
         self.filters_triggered = {}
         self.current_eventID = {}
+        self.previous_eventID = {}
         self.current_velocity = {}
         self.ramp_buffer = {}
         self.audio_alarm = {}
@@ -235,8 +236,9 @@ def avg_windows(data_percent, filters):
 
                 for k in range(0, len(list_to_avg)):
 
-                    if(int(list_to_avg[k]) != 0):
-                        list_sum += numpy.log(list_to_avg[k])
+                    if(str(list_to_avg[k]) != "0.0"):
+                        #list_sum += numpy.log(list_to_avg[k])
+                        list_sum += list_to_avg[k]
                         length += 1
 
                 data_percent_used = (length/len(list_to_avg))*100
@@ -383,7 +385,7 @@ def trigger(vote, votes_needed):
 
 """ Creates new event in catalog and new file, if necessary. Returns event_info (for filter, give time & eventID).
 """
-def catalog_new_event(current_time, current_filter, current_info, current_stations, line_one, space):
+def catalog_new_event(current_time, current_filter, current_info, previous_info, current_stations, line_one, space):
 
     # defines file path of new catalog (or of existing catalog) based on current time
     cat_path = ("tremor_catalog/" + str(current_time.year) + "/")
@@ -413,6 +415,7 @@ def catalog_new_event(current_time, current_filter, current_info, current_statio
         eventID = int(prevID) + 1
 
     current_info[current_filter] = [eventID, current_time]
+    previous_info[current_filter] = [eventID, current_time]
 
     # remove " " and "'" from station and filter strings to avoid future reading issues (i.e. .split())
     characters_to_remove = " '[]"
@@ -433,6 +436,7 @@ def catalog_new_event(current_time, current_filter, current_info, current_statio
                   str(stations) + "\n")
     catalog.close()
 
+    AlertInfo.previous_eventID = previous_info
     AlertInfo.alert_on[current_filter] = True  # for a filter, set alert_on to True (preserves state for next run)
     return(current_info)
 
@@ -496,7 +500,7 @@ def catalog_edit_event(current_filter, current_stations, alert_on, line_one):
 
 """ Creates catalogue of tremor events.
 """
-def write_catalog(time, filters):
+def write_catalog(time, filters, minimum_event_gap):
 
     triggered_filters = AlertInfo.filters_triggered
     AlertInfo.alert_on_redefine(filters, AlertInfo.alert_on)
@@ -513,16 +517,34 @@ def write_catalog(time, filters):
         filter_name = str(name)
         triggered_stations = AlertInfo.station_trigger
         stations = []  # list of triggered stations
+        event_info = AlertInfo.current_eventID
+        prev_info = AlertInfo.previous_eventID # previously triggered events (rechecked for every filter)
 
         for station in triggered_stations[filter_name]:
             if(triggered_stations[filter_name][station] == True):
                 stations.append(station)
+
         if(triggered_filters[filter_name] == True):
 
             if(alert_status[filter_name] == False): # start event record, current min trigger! but prev min no trigger
-                # returns event_info for AlertInfo.current_event_id
-                event_info = catalog_new_event(time, filter_name, event_info, stations, first_line, s)
-                audio[filter_name] = True # sets audio alarm dictionary to true for given minute
+
+                try:
+                    # Accounts for the minimum minutes between tremor event starttimes, may append to previous event
+                    new_tremor_time = prev_info[filter_name][1] + minimum_event_gap * 60
+                    if(time <= new_tremor_time):
+                        alert_status[filter_name] = True
+                        event_info[filter_name] = prev_info[filter_name]
+                        AlertInfo.current_eventID = event_info
+                        catalog_edit_event(filter_name, stations, alert_status, first_line)
+                        audio[filter_name] = False
+                    else:
+                        # returns event_info for AlertInfo.current_event_id
+                        event_info = catalog_new_event(time, filter_name, event_info, prev_info, stations, first_line,s)
+                        audio[filter_name] = True  # sets audio alarm dictionary to true for given minute
+                except:
+                    # returns event_info for AlertInfo.current_event_id
+                    event_info = catalog_new_event(time, filter_name, event_info, prev_info, stations, first_line, s)
+                    audio[filter_name] = True  # sets audio alarm dictionary to true for given minute
 
             elif(alert_status[filter_name] == True):
                 # read most recent event ID for this filter and check if new stations must be added to this event
@@ -618,52 +640,6 @@ def initiate_audio_alarm(timestamp):
         print("ALERT Error: Audio alarm module trigger_audio.run() could not be run at " + str(timestamp) + ".")
 
 
-"""Check that alert config parameters meet specifications. Prints error messages and warnings.
-"""
-def check_alert_config(sta, lta, ratio, ramp_min_avg, ramp_int, min_vel, votes, percent, stat_remove, stat_mute,
-                       filt_mute, silence, max_audio):
-
-    if(type(max_audio) != int and max_audio < 1):
-        print("ALERT Error: Configuration error code 001. "
-              "Maximum audio alarms per hour (max_audio_per_hr) must be an integer above zero. If you would like to "
-              "silence the tremv-ALERT module, please set the (silence_audio) variable to 'True'.")
-    if(type(ratio) != float and ratio <= 0):
-        print("ALERT Error: Configuration error code 002. "
-              "STA/LTA ratio must be a float-type variable that is greater than zero.")
-    if((sta + lta) > 1440 or sta < 1 or lta < 1):
-        print("ALERT Error: Configuration error code 003."
-              "Total window length (sta_length) + (lta_length) must not exceed 1440 minutes (one day). Minimum values "
-              "for sta and lta windows are each 1 minute.")
-    if(type(sta) != int or type(lta) != int):
-        print("ALERT Error: Configuration error code 004. "
-              "Window lengths (sta_length) and (sta_length) must be integers.")
-    if(min_vel < 0 or type(min_vel) != float):
-        print("ALERT Error: Configuration error code 005."
-              "Minimum velocity (min_vel) must be a float-type variable that exceeds 0 um/s.")
-    if(type(votes) != int or votes < 0):
-        print("ALERT Error: Configuration error code 006. Variable (station_votes) must be a positive integer.")
-    if(percent < 0 or percent > 100):
-        print("ALERT Error: Configuration error code 007. "
-              "Variable (percentage_data) must be a number between 0 and 100.")
-    if(stat_remove != []):
-        if(type(stat_remove) != list or type(stat_remove[0]) != str):
-            print("ALERT Error: Configuration error code 008. "
-                  "Stations removed from ALERT routines (remove_stations) must be written as strings in a list, i.e. "
-                  "['asb', 'svo', 'etc']")
-    if(stat_mute != []):
-        if(type(stat_mute) != list or type(stat_mute[0]) != str):
-            print("ALERT Error: Configuration error code 009. "
-                  "Muted stations (mute_stations) must be written as strings in a list, i.e. ['asb', 'svo', 'etc']")
-    if(filt_mute != []):
-        if(type(filt_mute) != list or type(filt_mute[0]) != list):
-            print("ALERT Error: Configuration error code 010. "
-                  "Muted filters (mute_filters) variable must either be an empty list [] or a list of list/s "
-                  "i.e. [[0.5, 1.0], [2.0, 4.0]].")
-    if(silence != "True" and silence != "False"):
-        print("ALERT Error: Configuration error code 011. The (silence_audio) variable must be a string with a Boolean "
-              "'True' to silence the audio alarm, or 'False' to allow the alarm to ring.")
-
-
 def main(starttime, logger_filters, channel):
 
     alert_config_filename = "alert_config.json"
@@ -677,12 +653,6 @@ def main(starttime, logger_filters, channel):
     sta_len = alert_config["sta_length"]*60-60
     # * 60 to convert to sec, minus 60 because already includes data from current minute
     lta_len = alert_config["lta_length"]*60-60
-
-    check_alert_config(alert_config["sta_length"], alert_config["lta_length"], alert_config["trigger_ratio"],
-                       alert_config["ramp_min_avg"], alert_config["ramp_intervals"], alert_config["min_velocity"],
-                       alert_config["station_votes"], alert_config["percentage_data"], alert_config["remove_stations"],
-                       alert_config["mute_stations"], alert_config["mute_filters"], alert_config["silence_audio"],
-                       alert_config["max_audio_per_hr"])
 
     # read data, split data to sta and lta windows
     time_windows = define_windows(starttime, sta_len, lta_len)
@@ -701,7 +671,7 @@ def main(starttime, logger_filters, channel):
 
     voting = stat_voting(alert_config["trigger_ratio"], alert_config["min_velocity"])
     trigger(voting, alert_config["station_votes"])
-    write_catalog(starttime, logger_filters)
+    write_catalog(starttime, logger_filters, alert_config["minimum_min_between_events"])
 
     silence_muted_stations(alert_config["mute_stations"], alert_config["station_votes"], voting, logger_filters)
     silence_muted_filters(alert_config["mute_filters"], logger_filters)
