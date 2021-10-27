@@ -32,12 +32,12 @@ def logger_output_path(date):
     return "logger_output/" + str(date.year) + "/" + str(date.month) + "/"
 
 
-""" Creates file name format: YYYY.MM.DD_[f1,f2].tremvlog from a given timestamp and filter.
+""" Creates file name format: YYYY.MM.DD_[f1,f2].csv from a given timestamp and filter.
     Date is a python datetime object and f is bandpass filter represented as a tuple of floats.
 """
-def generate_tremvlog_filename(date, f):
+def generate_tremvlog_filename(date, f, component):
     datestr = str(date.year) + "." + str(date.month) + "." + str(date.day)
-    return(datestr + "_" + str(f[0]) + "," + str(f[1]) + ".tremvlog")
+    return(datestr + "_" + str(f[0]) + "," + str(f[1]) + "_" + str(component) + ".csv")
 
 
 """ Parses an iso format date string to python datetime object.
@@ -56,41 +56,66 @@ def parse_isoformat_to_datetime(date_str):
     return(datetime.datetime(year=yy, month=mm, day=dd, hour=h, minute=m, second=s))
 
 
-""" Reads in a tremvlog file and returns a dictionary where the keys are the station names.
+""" Reads in a csv file and returns a dictionary where the keys are the station names.
 """
-def read_tremvlog_file(filename):
+def read_tremvlog_file(filename,delim):
     result = {}
 
     if(os.path.exists(filename)):
         input_file = open(filename, "r")
-        station_names_in_file = input_file.readline().split()
+        station_names_in_file = input_file.readline().split(delim)
         station_names_in_file = station_names_in_file[1:] # remove "TIMESTAMP" at position 0
+
+        # removes \n line jump from last station in file and any other erroneous white space
+        for i in range(0, len(station_names_in_file)):
+            station_names_in_file[i] = station_names_in_file[i].rstrip()
 
         for name in station_names_in_file:
             result[name] = []
 
         for line in input_file.readlines():
-            values = line.split()
+            values = line.split(delim)
 
             for i in range(0, len(station_names_in_file)):
                 name = station_names_in_file[i]
-                ### i+1 to ignore timestamp (otherwise error cannot convert strng (timestamp) to float)
+                # i+1 to ignore timestamp (otherwise error cannot convert strng (timestamp) to float)
                 result[name].append(float(values[i+1]))
-            
+
     #result = dictionary of RSAM results up to current minute for all stations in file
     return(result)
 
-""" Reads tremvlog file and returns list of timestamps.
+
+""" Reads csv file and returns list of timestamps.
 """
-def read_tremvlog_timestamps(filename):
+def read_tremvlog_timestamps(filename,delim):
     timestamp_list = []
 
     if(os.path.exists(filename)):
         input_file = open(filename, "r")
 
         for line in input_file.readlines():
-            values = line.split()
+            values = line.split(delim)
             timestamp_list.append(values[0])
 
-    timestamp_list.pop(0) # Remove "TIMESTAMP" from position 0, first line
+        timestamp_list.pop(0) # Remove "TIMESTAMP" from position 0, first line
+        input_file.close()
+
     return(timestamp_list)
+
+
+""" Reads csv file and returns list of station names in file.
+"""
+def read_tremvlog_stations(filename,delim):
+
+    if(os.path.exists(filename)):
+        input_file = open(filename, "r")
+
+        stations = input_file.readline().split(delim)
+        stations = stations[1:]  # Remove "TIMESTAMP" text at position 0
+
+        for i in range(0, len(stations)):
+            stations[i] = stations[i].rstrip()
+
+        input_file.close()
+
+        return(stations)
