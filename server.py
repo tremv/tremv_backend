@@ -23,9 +23,9 @@ class api(object):
         #we just need to do this once so we can get response info for old data
         print("Getting response_inv file...")
         if(os.path.exists(self.response_inv_filename)):
-            self.response_inv = obspy.read_response_inv(self.response_inv_filename)
+            self.response_inv = obspy.read_inventory(self.response_inv_filename)
         else:
-            inv = fdsn.get_stations(network=self.config["network"], station="*", level="response")
+            inv = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")
             inv.write(self.response_inv_filename, format="STATIONXML")
             self.response_inv = inv
 
@@ -40,15 +40,33 @@ class api(object):
             result["data"][i]["stations"] = {}
 
         return result
+    
+    def getNetworkStations(self, date_start, date_end):
+        network_inv = self.fdsn.get_stations(network=self.config["network"], station="*", starttime=date_start, endtime=date_end)
+        result = {}
+
+        for s in network_inv[0]:
+            result[s.code] = {}
+            result[s.code]["latitude"] = s.latitude
+            result[s.code]["longitude"] = s.longitude
+            result[s.code]["site"] = s.site.name
+
+        return result
 
 
-    """ Return list of station names and a list of filters
-    """
+    #TODO: if no range is provided, just get the latest stations and return those
     @cherrypy.expose
+    @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
-    def metadata(self):
+    def available_stations(self):
         self.config.reload()
-        return({"filters": self.config["filters"], "station_names": self.config["station_names"]})
+
+        query = cherrypy.request.json
+
+        date_start = datetime.datetime(query["rangestart"]["year"], query["rangestart"]["month"], query["rangestart"]["day"])
+        date_end = datetime.datetime(query["rangeend"]["year"], query["rangeend"]["month"], query["rangeend"]["day"])
+
+        return self.getNetworkStations(date_start, date_end)
 
 
     """ Reads the newest tremvlogs based on provided filters, and returns the latest
@@ -124,15 +142,8 @@ class api(object):
     @cherrypy.tools.json_out()
     def range(self):
         query = cherrypy.request.json
-
         self.config.reload()
-
-        station_names = self.config["station_names"]
         filters = self.config["filters"]
-
-        if("station_names" in query):
-            if(len(query["station_names"]) > 0):
-                station_names = query["station_names"]
 
         if("filters" in query):
             if(len(query["filters"]) > 0):
@@ -153,6 +164,8 @@ class api(object):
         #keep the dates without minute info, and just keep the minutes as integers, which is easier
         date_start = datetime.datetime(query["rangestart"]["year"], query["rangestart"]["month"], query["rangestart"]["day"])
         date_end = datetime.datetime(query["rangeend"]["year"], query["rangeend"]["month"], query["rangeend"]["day"])
+
+        available_stations = self.getNetworkStations(date_start, date_end)
 
         #NOTE: for some reason "hour" and "minute" is a string?
         query_minute_start = int(query["rangestart"]["hour"]) * 60 + int(query["rangestart"]["minute"])
@@ -219,7 +232,7 @@ class api(object):
                         std_filter_index = self.standard_filters.index(f)
                         rsam_data = tremlog.values_z[std_filter_index]
 
-                    for name in station_names:
+                    for name in list(available_stations.keys()):
                         if(name in rsam_data):
                             if(name not in result["station_names"]):
                                 result["station_names"].append(name)
@@ -247,8 +260,6 @@ if(__name__ == "__main__"):
 
     cherrypy.server.socket_host = "0.0.0.0"
     cherrypy.server.socket_port = int(sys.argv[1])
-    cherrypy.tree.mount(frontend(), "/plot", config="plot.config")
-    cherrypy.tree.mount(frontend(), "/request", config="request.config")
     cherrypy.tree.mount(api(), "/api")
 
     if hasattr(cherrypy.engine, 'block'):
