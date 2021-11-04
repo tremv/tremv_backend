@@ -1,5 +1,7 @@
 import os
+import sys
 import json
+import logging
 
 #a wrapper around the json config
 class config:
@@ -13,9 +15,14 @@ class config:
         return self.config[key]
 
     def _read(self):
-        config_file = open(self.filename, "r")
-        self.config = json.loads(config_file.read())
-        config_file.close()
+        try:
+            config_file = open(self.filename, "r")
+            self.config = json.loads(config_file.read())
+            config_file.close()
+        except:
+            logging.error("Please define a config.json file.")
+            sys.exit(1)
+
 
     def reload(self):
         stamp = os.stat(self.filename).st_mtime

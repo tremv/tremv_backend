@@ -14,13 +14,8 @@ from obspy import UTCDateTime
 import common
 import config
 import alert
-
-
-""" Prints debugging info to stderr
-"""
-def debug_print(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
-    #print(*args, file=sys.stdout, **kwargs)
+import threading
+import logging
 
 
 """ Apply lowpass filter to the data and downsample it from 100 points per minute
@@ -214,9 +209,9 @@ def station_difference(file_stats, stats, fp, delim, filt_index, filt):
         # writes in debug log which stations have been removed/added
         if (filt_index == len(filt) - 1):
             if (len(added_stats) > 0):
-                debug_print("Added stations: " + str(added_stats))
+                logging.info("Added stations: " + str(added_stats))
             if (len(removed_stats) > 0):
-                debug_print("Removed stations: " + str(removed_stats))
+                logging.info("Removed stations: " + str(removed_stats))
 
         return (data_in_file)
 
@@ -346,33 +341,109 @@ def write_tremvlog_rsam(filename, delim, time, stations, rsam, filt_index):
 #       which seems to be true, but we never actually verify it...
 
 #TODO: the name 'network' in the config file is ambiguous
+
 class program:
     def __init__(self):
-        self.config = config.config("config.json")
-        self.seedlink = seedlinkClient(self.config["seedlink_address"], self.config["seedlink_port"], 5, False)
-        self.fdsn = fdsnClient(self.config["fdsn_address"])
-        self.response_inventory = None
-        self.fetch_inventory()
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
 
-    #TODO: schedule this function to execute every day on a seperate thread
-    def fetch_inventory(self):
-        print("getting response inventory...")
-        inventory = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")#TODO station wildcard from config file?
-        self.response_inventory = inventory
+        self.config = config.config("config.json")
+        self.response_filename = ".resp.xml"#TODO: setja í config eða environment?
+        self.metadata_filename = ".meta.xml"
+        self.fdsn = None
+        self.response_inventory = None
+        self.metadata_inventory = None
+
+        self.fdsn_connect()
+
+        if(self.fdsn is None):
+            self.read_response_from_file()
+        else:
+            self.fetch_response_inventory()
+
+        #TODO:Reyna tengjast aftur ef eitthvað fer úrskeiðis?
+        self.seedlink = seedlinkClient(self.config["seedlink_address"], self.config["seedlink_port"], 5, False)
+
+
+    def fdsn_connect(self):
+        try:
+            logging.info("Connecting to fdsn server...")
+            self.fdsn = fdsnClient(self.config["fdsn_address"])
+        except Exception as e:
+            logging.error("Could not connect to fdsn server.")
+            logging.info(e)
+
+
+    def read_response_from_file(self):
+        if(os.path.exists(self.response_filename)):
+            logging.info("Falling back to response file.")
+            self.response_inventory = obspy.read_inventory(self.response_filename)
+        else:
+            logging.error("No response file was found. Aborting program.")
+            sys.exit(1)
+
+
+    def read_metadata_from_file(self):
+        if(os.path.exists(self.metadata_filename)):
+            logging.info("Falling back to metadata file.")
+            self.metadata_inventory = obspy.read_inventory(self.metadata_filename)
+        else:
+            logging.error("No metadata file was found. Aborting program.")
+            sys.exit(1)
+
+
+    def fetch_response_inventory(self):
+        logging.info("Fetching response inventory...")
+        try:
+            self.response_inventory = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")#TODO station wildcard from config file?
+            self.response_inventory.write(self.response_filename, format="STATIONXML")
+        except Exception as e:
+            logging.error("Could not get response inventory from the fdsn server.")
+            logging.info(e)
+            if(self.response_inventory is None):
+                self.read_response_from_file()
+            else:
+                logging.info("Using cached response inventory.")
+
+
+    def fetch_response_inventory_threaded():
+        thread = threading.Thread(target=self.fetch_response_inventory)
+        thread.start()
+
+
+    def fdsn_connect_threaded():
+        thread = threading.Thread(target=self.fdsn_connect)
+        thread.start()
+
 
     def main(self):
         self.config.reload()
+
         fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
 
-        stations_in_network = []
-
-        #TODO:  make this a little nicer
         #TODO:  The station regex isn't consistent with the config, so what do we do?
         #       Maybe we just don't have a station regex and always ask for all stations and then just exclude
         #       the once in on the blacklist?
-        fdsn_station_metadata = self.fdsn.get_stations(network=self.config["network"], station="*", starttime=data_starttime, endtime=fetch_starttime)
-        for s in fdsn_station_metadata.networks[0]:
+
+        stations_in_network = []
+
+        try:
+            #NOTE:if this failed, would self.metadata... != None?
+            logging.info("Fetching metadata inventory...")
+            self.metadata_inventory = self.fdsn.get_stations(network=self.config["network"], station="*", starttime=data_starttime, endtime=fetch_starttime)
+            self.metadata_inventory.write(self.metadata_filename, format="STATIONXML")
+        except Exception as e:
+            logging.error("Could not get stations metadata from the fdsn server.")
+            logging.info(e)
+            if(self.metadata_inventory is None):
+                self.read_metadata_from_file()
+            else:
+                logging.info("Using cached metadata inventory.")
+
+        for s in self.metadata_inventory.networks[0]:
             if(s not in self.config["station_blacklist"]):
                 stations_in_network.append(s.code)
 
@@ -381,13 +452,11 @@ class program:
         if(os.path.exists(log_path) == False):
             os.makedirs(log_path)
 
-        debug_print("\nFetch start time: " + str(fetch_starttime))
-        debug_print("Data fetch duration: ", end="")
-
+        logging.info("Fetching waveforms...")
         #TODO: subscribe to the seedlink server instead of doing this??
         received_station_waveforms = self.seedlink.get_waveforms(self.config["network"], self.config["station_wildcard"], self.config["location_wildcard"], self.config["channels"], data_starttime, fetch_starttime)
 
-        debug_print(str(UTCDateTime() - fetch_starttime))
+        logging.info("Retrieval of metadata and waveforms took " + str(UTCDateTime() - fetch_starttime))
 
         filters = self.config["filters"]
         rsam_st = UTCDateTime()
@@ -404,20 +473,20 @@ class program:
         per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
         rsam_results = rsam_processing(per_filter_filtered_stations, filters, stations_in_network)
 
-        debug_print("Rsam calculation duration: " + str(UTCDateTime() - rsam_st))
+        logging.info("Rsam calculation duration: " + str(UTCDateTime() - rsam_st))
 
         station_channel = determine_channel(self.config["channels"])
         write_tremvlog_file(rsam_results, filters, stations_in_network, data_starttime, station_channel)
 
         datestr = str(data_starttime.year) + "." + str(data_starttime.month) + "." + str(data_starttime.day)
-        debug_print("Wrote to files " + datestr + " at: " + str(UTCDateTime()))
+        logging.info("Wrote to files " + datestr + " at: " + str(UTCDateTime()))
 
         if(self.config["alert_on"] == "True"):
             try:
                 # Runs tremv_alert module
                 alert.main(data_starttime, filters, station_channel)
             except:
-                debug_print("Alert module could not be run.")
+                logging.info("Alert module could not be run.")
 
 
 if __name__ == "__main__":
@@ -426,6 +495,8 @@ if __name__ == "__main__":
     #TODO: do the tasks queue up if they take longer than a minute for example?
     scheduler = schedule.Scheduler()
     scheduler.every().minute.at(":00").do(p.main)
+    scheduler.every().hour.do(p.fdsn_connect_threaded)
+    scheduler.every().day.at("00:00").do(p.fetch_response_inventory_threaded)
 
     while(True):
         scheduler.run_pending()
