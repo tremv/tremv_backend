@@ -355,17 +355,14 @@ class program:
         self.fdsn = None
         self.response_inventory = None
         self.metadata_inventory = None
+        self.response_lock = threading.Lock()
+        self.exit = False#used so we can tell the program to exit from a thread
 
         self.fdsn_connect()
-
-        if(self.fdsn is None):
-            self.read_response_from_file()
-        else:
-            self.fetch_response_inventory()
+        self.fetch_response_inventory()
 
         #TODO:Reyna tengjast aftur ef eitthvað fer úrskeiðis?
         self.seedlink = seedlinkClient(self.config["seedlink_address"], self.config["seedlink_port"], 5, False)
-
 
     def fdsn_connect(self):
         try:
@@ -374,15 +371,6 @@ class program:
         except Exception as e:
             logging.error("Could not connect to fdsn server.")
             logging.info(e)
-
-
-    def read_response_from_file(self):
-        if(os.path.exists(self.response_filename)):
-            logging.info("Falling back to response file.")
-            self.response_inventory = obspy.read_inventory(self.response_filename)
-        else:
-            logging.error("No response file was found. Aborting program.")
-            sys.exit(1)
 
 
     def read_metadata_from_file(self):
@@ -394,10 +382,25 @@ class program:
             sys.exit(1)
 
 
+    def read_response_from_file(self):
+        if(os.path.exists(self.response_filename)):
+            logging.info("Falling back to response file.")
+            response_lock.acquire()
+            self.response_inventory = obspy.read_inventory(self.response_filename)
+            response_lock.release()
+        else:
+            self.exit = True
+            logging.error("No response file was found. Aborting program.")
+            sys.exit(1)
+
+
     def fetch_response_inventory(self):
         logging.info("Fetching response inventory...")
+        response_lock.acquire()
+
         try:
-            self.response_inventory = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")#TODO station wildcard from config file?
+            inv = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")#TODO station wildcard from config file?
+            self.response_inventory = inv
             self.response_inventory.write(self.response_filename, format="STATIONXML")
         except Exception as e:
             logging.error("Could not get response inventory from the fdsn server.")
@@ -407,19 +410,21 @@ class program:
             else:
                 logging.info("Using cached response inventory.")
 
+        response_lock.release()
+
 
     def fetch_response_inventory_threaded():
         thread = threading.Thread(target=self.fetch_response_inventory)
         thread.start()
 
 
-    def fdsn_connect_threaded():
-        thread = threading.Thread(target=self.fdsn_connect)
-        thread.start()
-
-
     def main(self):
+        if(self.exit):
+            logging.info("Exiting from response fetch thread(file not found and unable to connect to the server).")
+            sys.exit(1)
+
         self.config.reload()
+        self.fdsn_connect()
 
         fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
@@ -431,9 +436,9 @@ class program:
         stations_in_network = []
 
         try:
-            #NOTE:if this failed, would self.metadata... != None?
             logging.info("Fetching metadata inventory...")
-            self.metadata_inventory = self.fdsn.get_stations(network=self.config["network"], station="*", starttime=data_starttime, endtime=fetch_starttime)
+            metadata = self.fdsn.get_stations(network=self.config["network"], station="*", starttime=data_starttime, endtime=fetch_starttime)
+            self.metadata_inventory = metadata
             self.metadata_inventory.write(self.metadata_filename, format="STATIONXML")
         except Exception as e:
             logging.error("Could not get stations metadata from the fdsn server.")
@@ -452,41 +457,58 @@ class program:
         if(os.path.exists(log_path) == False):
             os.makedirs(log_path)
 
-        logging.info("Fetching waveforms...")
-        #TODO: subscribe to the seedlink server instead of doing this??
-        received_station_waveforms = self.seedlink.get_waveforms(self.config["network"], self.config["station_wildcard"], self.config["location_wildcard"], self.config["channels"], data_starttime, fetch_starttime)
+        #TODO: skrifa 0 ef við fáum engin gögn? TODO
+        #Já, eins og er ætti það að vera þannig en þegar hdf5 er komið ætti það að vera óþarfi
+        try:
+            logging.info("Fetching waveforms...")
+            received_station_waveforms = self.seedlink.get_waveforms(self.config["network"], self.config["station_wildcard"], self.config["location_wildcard"], self.config["channels"], data_starttime, fetch_starttime)
 
-        logging.info("Retrieval of metadata and waveforms took " + str(UTCDateTime() - fetch_starttime))
+            logging.info("Retrieval of metadata and waveforms took " + str(UTCDateTime() - fetch_starttime))
 
-        filters = self.config["filters"]
-        rsam_st = UTCDateTime()
+            filters = self.config["filters"]
+            rsam_st = UTCDateTime()
 
-        pre_processed_stations = process_station_data(received_station_waveforms)
+            pre_processed_stations = process_station_data(received_station_waveforms)
 
-        for trace in received_station_waveforms:
-            name = trace.stats.station
-            seed_identifier = self.config["network"] + "." + name + ".." + self.config["channels"]
-            response = self.response_inventory.get_response(seed_identifier, fetch_starttime)
-            counts_to_um = response.instrument_sensitivity.value / 1000000
-            trace.data /= counts_to_um
+            response_lock.acquire()
+            for trace in received_station_waveforms:
+                name = trace.stats.station
+                seed_identifier = self.config["network"] + "." + name + ".." + self.config["channels"]
+                response = self.response_inventory.get_response(seed_identifier, fetch_starttime)
+                counts_to_um = response.instrument_sensitivity.value / 100000
+                """
+                File "logger.py", line 471, in main
+                    trace.data /= counts_to_um
+                TypeError: ufunc 'true_divide' output (typecode 'd') could not be coerced to provided output parameter (typecode 'i') according to the casting rule ''same_kind''
+                """
+                #TODO TODO TODO
+                #Fæ error hér???
+                #TODO TODO TODO
+                trace.data /= counts_to_um
+            response_lock.release()
 
-        per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
-        rsam_results = rsam_processing(per_filter_filtered_stations, filters, stations_in_network)
+            per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
+            rsam_results = rsam_processing(per_filter_filtered_stations, filters, stations_in_network)
 
-        logging.info("Rsam calculation duration: " + str(UTCDateTime() - rsam_st))
+            logging.info("Rsam calculation duration: " + str(UTCDateTime() - rsam_st))
 
-        station_channel = determine_channel(self.config["channels"])
-        write_tremvlog_file(rsam_results, filters, stations_in_network, data_starttime, station_channel)
+            station_channel = determine_channel(self.config["channels"])
+            write_tremvlog_file(rsam_results, filters, stations_in_network, data_starttime, station_channel)
 
-        datestr = str(data_starttime.year) + "." + str(data_starttime.month) + "." + str(data_starttime.day)
-        logging.info("Wrote to files " + datestr + " at: " + str(UTCDateTime()))
+            datestr = str(data_starttime.year) + "." + str(data_starttime.month) + "." + str(data_starttime.day)
+            logging.info("Wrote to files " + datestr + " at: " + str(UTCDateTime()))
 
-        if(self.config["alert_on"] == "True"):
-            try:
-                # Runs tremv_alert module
-                alert.main(data_starttime, filters, station_channel)
-            except:
-                logging.info("Alert module could not be run.")
+            if(self.config["alert_on"] == "True"):
+                try:
+                    # Runs tremv_alert module
+                    alert.main(data_starttime, filters, station_channel)
+                except:
+                    logging.info("Alert module could not be run.")
+
+        except Exception as e:
+            logging.error("Could not get station waveforms from the seedlink server.")
+            logging.info(e)
+
 
 
 if __name__ == "__main__":
@@ -495,7 +517,6 @@ if __name__ == "__main__":
     #TODO: do the tasks queue up if they take longer than a minute for example?
     scheduler = schedule.Scheduler()
     scheduler.every().minute.at(":00").do(p.main)
-    scheduler.every().hour.do(p.fdsn_connect_threaded)
     scheduler.every().day.at("00:00").do(p.fetch_response_inventory_threaded)
 
     while(True):

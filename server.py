@@ -7,27 +7,30 @@ import math
 import datetime
 import common
 import config
-import pytremlog#@IMO stuff
+from pytremlog import pytremlog
+
 import obspy
 from obspy.clients.fdsn import Client as fdsnClient
 from obspy import UTCDateTime
 
+#TODO: ég breytti einhverjum nöfnum, self.response_inventory og eitthvað...
 class api(object):
     def __init__(self):
         self.standard_filters = [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]]
         self.config = config.config("config.json")#TODO: environment variable
         self.fdsn = fdsnClient(self.config["fdsn_address"])
-        self.response_inv_filename = "inv.xml"#TODO: environment variable
-        self.response_inv = None
+        self.response_filename = ".resp.xml"#TODO: environment variable
+        self.response_inventory = None
 
+        #TODO: maybe we should just wait here for the logger to get the inv file???
         #we just need to do this once so we can get response info for old data
-        print("Getting response_inv file...")
-        if(os.path.exists(self.response_inv_filename)):
-            self.response_inv = obspy.read_inventory(self.response_inv_filename)
+        print("Getting response_inventory file...")
+        if(os.path.exists(self.response_filename)):
+            self.response_inventory = obspy.read_inventory(self.response_filename)
         else:
             inv = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")
-            inv.write(self.response_inv_filename, format="STATIONXML")
-            self.response_inv = inv
+            inv.write(self.response_filename, format="STATIONXML")
+            self.response_inventory = inv
 
     def jsonResult(self, filters):
         result = {}

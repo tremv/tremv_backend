@@ -1,0 +1,12 @@
+{
+	"fdsn_address": "http://eos-seiscomp-d01.vedur.is/fdsnws/",
+	"seedlink_address": "sandur.vedur.is",
+	"seedlink_port": 18000,
+	"network": "VI",
+	"station_wildcard": "???",
+	"location_wildcard": "??",
+	"channels": "HHZ",
+	"filters": [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]],
+	"station_blacklist": [],
+	"alert_on": "False"
+}

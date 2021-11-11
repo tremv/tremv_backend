@@ -1,0 +1,1171 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.1">
+  <Source>SeisComP</Source>
+  <Sender>VI</Sender>
+  <Module/>
+  <ModuleURI/>
+  <Created>2021-11-04T17:36:00.901033Z</Created>
+  <Network code="VI" startDate="1989-08-15T00:00:00.000000Z" restrictedStatus="open">
+    <Description>SIL  Icelandic national seismic network</Description>
+    <Station code="alf" startDate="2010-12-29T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.49104</Latitude>
+      <Longitude unit="DEGREES">-19.1844</Longitude>
+      <Elevation>132.0</Elevation>
+      <Site>
+        <Name>VI-alf</Name>
+      </Site>
+      <CreationDate>2010-12-29T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="asb" startDate="1994-08-01T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.74818</Latitude>
+      <Longitude unit="DEGREES">-21.32535</Longitude>
+      <Elevation>94.0</Elevation>
+      <Site>
+        <Name>VI-asb</Name>
+      </Site>
+      <CreationDate>1994-08-01T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="ask" startDate="1999-05-14T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">65.05192</Latitude>
+      <Longitude unit="DEGREES">-16.64819</Longitude>
+      <Elevation>955.0</Elevation>
+      <Site>
+        <Name>VI-ask</Name>
+      </Site>
+      <CreationDate>1999-05-14T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="asm" startDate="1990-01-03T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.83361</Latitude>
+      <Longitude unit="DEGREES">-20.61474</Longitude>
+      <Elevation>22.0</Elevation>
+      <Site>
+        <Name>VI-asm</Name>
+      </Site>
+      <CreationDate>1990-01-03T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="aus" startDate="2013-05-01T12:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.67231</Latitude>
+      <Longitude unit="DEGREES">-19.08079</Longitude>
+      <Elevation>1373.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2013-05-01T12:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="bar" startDate="2014-11-11T12:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.6402</Latitude>
+      <Longitude unit="DEGREES">-17.4464</Longitude>
+      <Elevation>1888.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2014-11-11T12:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="bja" startDate="1989-08-15T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.9459</Latitude>
+      <Longitude unit="DEGREES">-21.30258</Longitude>
+      <Elevation>57.0</Elevation>
+      <Site>
+        <Name>VI-bja</Name>
+      </Site>
+      <CreationDate>1989-08-15T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="bjk" startDate="2014-08-20T12:04:08.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.46898</Latitude>
+      <Longitude unit="DEGREES">-16.75247</Longitude>
+      <Elevation>1572.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2014-08-20T12:04:08.000000Z</CreationDate>
+    </Station>
+    <Station code="bre" startDate="2001-01-25T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">66.12336</Latitude>
+      <Longitude unit="DEGREES">-17.90967</Longitude>
+      <Elevation>41.0</Elevation>
+      <Site>
+        <Name>VI-bre</Name>
+      </Site>
+      <CreationDate>2001-01-25T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="dim" startDate="2008-11-19T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">65.96151</Latitude>
+      <Longitude unit="DEGREES">-16.93192</Longitude>
+      <Elevation>266.0</Elevation>
+      <Site>
+        <Name>VI-dim</Name>
+      </Site>
+      <CreationDate>2008-11-19T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="djk" startDate="2014-08-17T17:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.50405</Latitude>
+      <Longitude unit="DEGREES">-17.23571</Longitude>
+      <Elevation>1683.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2014-08-17T17:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="eda" startDate="2016-10-17T19:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.08262</Latitude>
+      <Longitude unit="DEGREES">-21.3891</Longitude>
+      <Elevation>250.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2016-10-17T19:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="eng" startDate="2016-09-21T17:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.08782</Latitude>
+      <Longitude unit="DEGREES">-21.41042</Longitude>
+      <Elevation>275.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+      </Site>
+      <CreationDate>2016-09-21T17:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="ent" startDate="2011-12-15T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.70102</Latitude>
+      <Longitude unit="DEGREES">-19.18226</Longitude>
+      <Elevation>1355.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+      </Site>
+      <CreationDate>2011-12-15T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="esk" startDate="2001-10-04T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.52503</Latitude>
+      <Longitude unit="DEGREES">-19.4508</Longitude>
+      <Elevation>95.0</Elevation>
+      <Site>
+        <Name>VI-esk</Name>
+      </Site>
+      <CreationDate>2001-10-04T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="fag" startDate="1999-05-14T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.87478</Latitude>
+      <Longitude unit="DEGREES">-16.65364</Longitude>
+      <Elevation>27.0</Elevation>
+      <Site>
+        <Name>VI-fag</Name>
+      </Site>
+      <CreationDate>1999-05-14T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="fal" startDate="2013-07-15T12:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.9577</Latitude>
+      <Longitude unit="DEGREES">-16.82185</Longitude>
+      <Elevation>109.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+      </Site>
+      <CreationDate>2013-07-15T12:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="fed" startDate="2013-07-13T12:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.02508</Latitude>
+      <Longitude unit="DEGREES">-19.69086</Longitude>
+      <Elevation>432.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2013-07-13T12:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="gfl" startDate="2016-10-01T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.52652</Latitude>
+      <Longitude unit="DEGREES">-19.11007</Longitude>
+      <Elevation>710.0</Elevation>
+      <Site>
+        <Name>Grænufjöll</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2016-10-01T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="gha" startDate="2008-03-19T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">65.84346</Latitude>
+      <Longitude unit="DEGREES">-16.66291</Longitude>
+      <Elevation>396.0</Elevation>
+      <Site>
+        <Name>VI-gha</Name>
+      </Site>
+      <CreationDate>2008-03-19T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="gil" startDate="1993-10-23T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">66.07734</Latitude>
+      <Longitude unit="DEGREES">-16.35131</Longitude>
+      <Elevation>134.0</Elevation>
+      <Site>
+        <Name>VI-gil</Name>
+      </Site>
+      <CreationDate>1993-10-23T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="god" startDate="2006-09-06T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.65976</Latitude>
+      <Longitude unit="DEGREES">-19.32236</Longitude>
+      <Elevation>1200.0</Elevation>
+      <Site>
+        <Name>VI-god</Name>
+      </Site>
+      <CreationDate>2006-09-06T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="gra" startDate="1993-10-21T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">65.9176</Latitude>
+      <Longitude unit="DEGREES">-17.57855</Longitude>
+      <Elevation>24.0</Elevation>
+      <Site>
+        <Name>VI-gra</Name>
+      </Site>
+      <CreationDate>1993-10-21T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="grf" startDate="2001-05-08T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.40656</Latitude>
+      <Longitude unit="DEGREES">-17.26713</Longitude>
+      <Elevation>1710.0</Elevation>
+      <Site>
+        <Name>VI-grf</Name>
+      </Site>
+      <CreationDate>2001-05-08T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="gri" startDate="1994-01-21T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">66.54152</Latitude>
+      <Longitude unit="DEGREES">-18.00951</Longitude>
+      <Elevation>36.0</Elevation>
+      <Site>
+        <Name>VI-gri</Name>
+      </Site>
+      <CreationDate>1994-01-21T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="grs" startDate="1996-02-15T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">65.63811</Latitude>
+      <Longitude unit="DEGREES">-16.12409</Longitude>
+      <Elevation>378.0</Elevation>
+      <Site>
+        <Name>VI-grs</Name>
+      </Site>
+      <CreationDate>1996-02-15T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="grv" startDate="1997-02-23T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.85716</Latitude>
+      <Longitude unit="DEGREES">-22.45583</Longitude>
+      <Elevation>52.0</Elevation>
+      <Site>
+        <Name>VI-grv</Name>
+      </Site>
+      <CreationDate>1997-02-23T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="gyg" startDate="1989-12-10T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.28107</Latitude>
+      <Longitude unit="DEGREES">-20.21483</Longitude>
+      <Elevation>119.0</Elevation>
+      <Site>
+        <Name>VI-gyg</Name>
+      </Site>
+      <CreationDate>1989-12-10T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hae" startDate="2013-09-17T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.02611</Latitude>
+      <Longitude unit="DEGREES">-16.98858</Longitude>
+      <Elevation>263.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+      </Site>
+      <CreationDate>2013-09-17T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hau" startDate="1989-12-08T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.96851</Latitude>
+      <Longitude unit="DEGREES">-19.96471</Longitude>
+      <Elevation>96.0</Elevation>
+      <Site>
+        <Name>VI-hau</Name>
+      </Site>
+      <CreationDate>1989-12-08T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hed" startDate="2000-09-25T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">66.0808</Latitude>
+      <Longitude unit="DEGREES">-17.30975</Longitude>
+      <Elevation>75.0</Elevation>
+      <Site>
+        <Name>VI-hed</Name>
+      </Site>
+      <CreationDate>2000-09-25T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hei" startDate="1989-12-13T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.19978</Latitude>
+      <Longitude unit="DEGREES">-21.23604</Longitude>
+      <Elevation>162.0</Elevation>
+      <Site>
+        <Name>VI-hei</Name>
+      </Site>
+      <CreationDate>1989-12-13T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hes" startDate="2016-09-09T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.05</Latitude>
+      <Longitude unit="DEGREES">-19.56</Longitude>
+      <Elevation>455.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+      </Site>
+      <CreationDate>2016-09-09T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hha" startDate="1995-02-01T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">65.94</Latitude>
+      <Longitude unit="DEGREES">-18.38</Longitude>
+      <Elevation>37.1</Elevation>
+      <Site>
+        <Name>VI-hha</Name>
+      </Site>
+      <CreationDate>1995-02-01T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hla" startDate="1995-02-01T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">65.94441</Latitude>
+      <Longitude unit="DEGREES">-18.38724</Longitude>
+      <Elevation>37.0</Elevation>
+      <Site>
+        <Name>Hella, Arskogsströnd</Name>
+      </Site>
+      <CreationDate>1995-02-01T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hrn" startDate="1996-08-30T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">66.11</Latitude>
+      <Longitude unit="DEGREES">-20.12252</Longitude>
+      <Elevation>15.0</Elevation>
+      <Site>
+        <Name>VI-hrn</Name>
+      </Site>
+      <CreationDate>1996-08-30T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hus" startDate="2013-06-29T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.2955</Latitude>
+      <Longitude unit="DEGREES">-17.6565</Longitude>
+      <Elevation>1314.0</Elevation>
+      <Site>
+        <Name>IMO - Husbondi</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2013-06-29T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hvo" startDate="1999-10-20T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.5261</Latitude>
+      <Longitude unit="DEGREES">-18.84781</Longitude>
+      <Elevation>196.0</Elevation>
+      <Site>
+        <Name>VI-hvo</Name>
+      </Site>
+      <CreationDate>1999-10-20T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="iey" startDate="2013-08-15T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.09534</Latitude>
+      <Longitude unit="DEGREES">-18.12391</Longitude>
+      <Elevation>652.0</Elevation>
+      <Site>
+        <Name>VI-iey</Name>
+      </Site>
+      <CreationDate>2013-08-15T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="jok" startDate="2011-09-23T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.31529</Latitude>
+      <Longitude unit="DEGREES">-18.22546</Longitude>
+      <Elevation>736.0</Elevation>
+      <Site>
+        <Name>VI-jok</Name>
+      </Site>
+      <CreationDate>2011-09-23T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="kal" startDate="1996-10-22T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.94761</Latitude>
+      <Longitude unit="DEGREES">-17.68698</Longitude>
+      <Elevation>78.0</Elevation>
+      <Site>
+        <Name>VI-kal</Name>
+      </Site>
+      <CreationDate>1996-10-22T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="kas" startDate="2006-01-25T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.0229</Latitude>
+      <Longitude unit="DEGREES">-21.852</Longitude>
+      <Elevation>108.0</Elevation>
+      <Site>
+        <Name>VI-kas</Name>
+      </Site>
+      <CreationDate>2006-01-25T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="kre" startDate="2006-09-13T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.78369</Latitude>
+      <Longitude unit="DEGREES">-16.38282</Longitude>
+      <Elevation>760.0</Elevation>
+      <Site>
+        <Name>Kreppuhraun</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2006-09-13T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="kri" startDate="1992-12-01T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.8781</Latitude>
+      <Longitude unit="DEGREES">-22.07646</Longitude>
+      <Elevation>146.0</Elevation>
+      <Site>
+        <Name>VI-kri</Name>
+      </Site>
+      <CreationDate>1992-12-01T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="kro" startDate="1996-10-08T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.09806</Latitude>
+      <Longitude unit="DEGREES">-21.11976</Longitude>
+      <Elevation>147.0</Elevation>
+      <Site>
+        <Name>VI-kro</Name>
+      </Site>
+      <CreationDate>1996-10-08T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="ksk" startDate="2013-06-29T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.1613</Latitude>
+      <Longitude unit="DEGREES">-16.4737</Longitude>
+      <Elevation>940.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2013-06-29T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="kvo" startDate="2002-06-23T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">65.71392</Latitude>
+      <Longitude unit="DEGREES">-16.8813</Longitude>
+      <Elevation>572.0</Elevation>
+      <Site>
+        <Name>VI-kvo</Name>
+      </Site>
+      <CreationDate>2002-06-23T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="lei" startDate="1993-10-24T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">66.40665</Latitude>
+      <Longitude unit="DEGREES">-16.48957</Longitude>
+      <Elevation>41.0</Elevation>
+      <Site>
+        <Name>VI-lei</Name>
+      </Site>
+      <CreationDate>1993-10-24T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="mel" startDate="2009-10-01T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">65.57002</Latitude>
+      <Longitude unit="DEGREES">-16.65725</Longitude>
+      <Elevation>370.0</Elevation>
+      <Site>
+        <Name>VI-mel</Name>
+      </Site>
+      <CreationDate>2009-10-01T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="mid" startDate="1989-12-21T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.65833</Latitude>
+      <Longitude unit="DEGREES">-19.88573</Longitude>
+      <Elevation>132.0</Elevation>
+      <Site>
+        <Name>VI-mid</Name>
+      </Site>
+      <CreationDate>1989-12-21T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="mjo" startDate="2013-07-13T12:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.93295</Latitude>
+      <Longitude unit="DEGREES">-19.67238</Longitude>
+      <Elevation>704.0</Elevation>
+      <Site>
+        <Name>VI-mjo</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2013-07-13T12:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="mko" startDate="2006-09-13T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.9784</Latitude>
+      <Longitude unit="DEGREES">-16.33826</Longitude>
+      <Elevation>690.0</Elevation>
+      <Site>
+        <Name>VI-mko</Name>
+      </Site>
+      <CreationDate>2006-09-13T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="nyl" startDate="1997-02-06T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.97368</Latitude>
+      <Longitude unit="DEGREES">-22.73792</Longitude>
+      <Elevation>7.0</Elevation>
+      <Site>
+        <Name>VI-nyl</Name>
+      </Site>
+      <CreationDate>1997-02-06T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="ren" startDate="1996-11-03T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">65.64699</Latitude>
+      <Longitude unit="DEGREES">-16.90591</Longitude>
+      <Elevation>338.0</Elevation>
+      <Site>
+        <Name>VI-ren</Name>
+      </Site>
+      <CreationDate>1996-11-03T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="rju" startDate="2010-10-19T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.61745</Latitude>
+      <Longitude unit="DEGREES">-18.6721</Longitude>
+      <Elevation>173.0</Elevation>
+      <Site>
+        <Name>VI-rju</Name>
+      </Site>
+      <CreationDate>2010-10-19T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="rne" startDate="2008-06-19T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.81681</Latitude>
+      <Longitude unit="DEGREES">-22.70563</Longitude>
+      <Elevation>19.0</Elevation>
+      <Site>
+        <Name>VI-rne</Name>
+      </Site>
+      <CreationDate>2008-06-19T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="san" startDate="1996-10-14T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.05601</Latitude>
+      <Longitude unit="DEGREES">-21.57013</Longitude>
+      <Elevation>208.0</Elevation>
+      <Site>
+        <Name>VI-san</Name>
+      </Site>
+      <CreationDate>1996-10-14T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="sau" startDate="1989-12-12T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.98983</Latitude>
+      <Longitude unit="DEGREES">-20.41519</Longitude>
+      <Elevation>74.0</Elevation>
+      <Site>
+        <Name>VI-sau</Name>
+      </Site>
+      <CreationDate>1989-12-12T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="sig" startDate="1993-10-26T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">66.13229</Latitude>
+      <Longitude unit="DEGREES">-18.91483</Longitude>
+      <Elevation>10.0</Elevation>
+      <Site>
+        <Name>VI-sig</Name>
+      </Site>
+      <CreationDate>1993-10-26T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="ski" startDate="2008-11-19T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">65.86982</Latitude>
+      <Longitude unit="DEGREES">-17.02696</Longitude>
+      <Elevation>316.0</Elevation>
+      <Site>
+        <Name>VI-ski</Name>
+      </Site>
+      <CreationDate>2008-11-19T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="skr" startDate="1996-10-02T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.56014</Latitude>
+      <Longitude unit="DEGREES">-18.38647</Longitude>
+      <Elevation>858.0</Elevation>
+      <Site>
+        <Name>VI-skr</Name>
+      </Site>
+      <CreationDate>1996-10-02T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="sly" startDate="2010-10-20T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.82402</Latitude>
+      <Longitude unit="DEGREES">-19.11732</Longitude>
+      <Elevation>633.0</Elevation>
+      <Site>
+        <Name>VI-sly</Name>
+      </Site>
+      <CreationDate>2010-10-20T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="snb" startDate="1993-02-10T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.73637</Latitude>
+      <Longitude unit="DEGREES">-18.63068</Longitude>
+      <Elevation>245.0</Elevation>
+      <Site>
+        <Name>VI-snb</Name>
+      </Site>
+      <CreationDate>1993-02-10T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="sol" startDate="1990-02-20T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.92896</Latitude>
+      <Longitude unit="DEGREES">-20.94357</Longitude>
+      <Elevation>30.0</Elevation>
+      <Site>
+        <Name>VI-sol</Name>
+      </Site>
+      <CreationDate>1990-02-20T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="ste" startDate="2015-09-30T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.8559</Latitude>
+      <Longitude unit="DEGREES">-19.6275</Longitude>
+      <Elevation>740.0</Elevation>
+      <Site>
+        <Name>VI-ste</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2015-09-30T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="sva" startDate="1998-07-27T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">65.33691</Latitude>
+      <Longitude unit="DEGREES">-17.25454</Longitude>
+      <Elevation>403.0</Elevation>
+      <Site>
+        <Name>VI-sva</Name>
+      </Site>
+      <CreationDate>1998-07-27T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="tho" startDate="2014-09-25T22:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.93372</Latitude>
+      <Longitude unit="DEGREES">-16.67558</Longitude>
+      <Elevation>692.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2014-09-25T22:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="urh" startDate="2014-08-17T17:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.820373</Latitude>
+      <Longitude unit="DEGREES">-17.147123</Longitude>
+      <Elevation>1018.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2014-08-17T17:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="vat" startDate="1998-04-20T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.18664</Latitude>
+      <Longitude unit="DEGREES">-18.91768</Longitude>
+      <Elevation>573.0</Elevation>
+      <Site>
+        <Name>VI-vat</Name>
+      </Site>
+      <CreationDate>1998-04-20T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="vme" startDate="2012-10-12T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.427</Latitude>
+      <Longitude unit="DEGREES">-20.29389</Longitude>
+      <Elevation>76.0</Elevation>
+      <Site>
+        <Name>VI-vme</Name>
+      </Site>
+      <CreationDate>2012-10-12T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="vog" startDate="1997-02-23T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.96967</Latitude>
+      <Longitude unit="DEGREES">-22.39285</Longitude>
+      <Elevation>7.0</Elevation>
+      <Site>
+        <Name>VI-vog</Name>
+      </Site>
+      <CreationDate>1997-02-23T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="von" startDate="1999-05-14T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.67322</Latitude>
+      <Longitude unit="DEGREES">-17.75582</Longitude>
+      <Elevation>1017.0</Elevation>
+      <Site>
+        <Name>VI-von</Name>
+      </Site>
+      <CreationDate>1999-05-14T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="vos" startDate="1997-04-15T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.85279</Latitude>
+      <Longitude unit="DEGREES">-21.70357</Longitude>
+      <Elevation>8.0</Elevation>
+      <Site>
+        <Name>VI-vos</Name>
+      </Site>
+      <CreationDate>1997-04-15T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="vot" startDate="2011-06-05T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.27081</Latitude>
+      <Longitude unit="DEGREES">-17.18254</Longitude>
+      <Elevation>1141.0</Elevation>
+      <Site>
+        <Name>VI-vot</Name>
+      </Site>
+      <CreationDate>2011-06-05T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="vsh" startDate="2004-12-29T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.80775</Latitude>
+      <Longitude unit="DEGREES">-15.72768</Longitude>
+      <Elevation>861.0</Elevation>
+      <Site>
+        <Name>VI-vsh</Name>
+      </Site>
+      <CreationDate>2004-12-29T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="bab" startDate="2017-06-27T15:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.63843</Latitude>
+      <Longitude unit="DEGREES">-17.47282</Longitude>
+      <Elevation>1913.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2017-06-27T15:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="olf" startDate="2016-07-13T14:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.7517</Latitude>
+      <Longitude unit="DEGREES">-18.84078</Longitude>
+      <Elevation>472.0</Elevation>
+      <Site>
+        <Name>Öldufell</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2016-07-13T14:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="lod" startDate="2017-08-15T18:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.7344</Latitude>
+      <Longitude unit="DEGREES">-18.79114</Longitude>
+      <Elevation>406.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2017-08-15T18:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="mim" startDate="2017-09-08T11:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.65699</Latitude>
+      <Longitude unit="DEGREES">-19.89452</Longitude>
+      <Elevation>110.0</Elevation>
+      <Site>
+        <Name>SIL</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2017-09-08T11:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="vey" startDate="2017-09-18T17:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.41124</Latitude>
+      <Longitude unit="DEGREES">-20.28439</Longitude>
+      <Elevation>16.0</Elevation>
+      <Site>
+        <Name>SIL</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2017-09-18T17:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hsx" startDate="2017-10-16T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">66.04895</Latitude>
+      <Longitude unit="DEGREES">-17.33982</Longitude>
+      <Elevation>30.0</Elevation>
+      <Site>
+        <Name>Husavik Sjukrahus SM</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2017-10-16T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hrx" startDate="2017-10-16T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">66.0468</Latitude>
+      <Longitude unit="DEGREES">-17.3411</Longitude>
+      <Elevation>20.0</Elevation>
+      <Site>
+        <Name>Husavik Radhus SM</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2017-10-16T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="eqx" startDate="2017-10-16T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.93673</Latitude>
+      <Longitude unit="DEGREES">-21.00262</Longitude>
+      <Elevation>11.0</Elevation>
+      <Site>
+        <Name>Selfoss EERC SM</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2017-10-16T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="kvi" startDate="2017-10-24T17:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.982208</Latitude>
+      <Longitude unit="DEGREES">-16.432868</Longitude>
+      <Elevation>41.0</Elevation>
+      <Site>
+        <Name>SIL</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2017-10-24T17:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hox" startDate="2017-10-24T17:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.91141</Latitude>
+      <Longitude unit="DEGREES">-16.613876</Longitude>
+      <Elevation>423.0</Elevation>
+      <Site>
+        <Name>SIL</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2017-10-24T17:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="bey" startDate="2017-09-26T17:00:00.000000Z" restrictedStatus="closed">
+      <Latitude unit="DEGREES">63.44864</Latitude>
+      <Longitude unit="DEGREES">-20.1949</Longitude>
+      <Elevation>120.0</Elevation>
+      <Site>
+        <Name>SIL</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2017-09-26T17:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="mor" startDate="2017-11-22T14:00:00.000000Z">
+      <Latitude unit="DEGREES">64.30177</Latitude>
+      <Longitude unit="DEGREES">-21.7511</Longitude>
+      <Elevation>130.0</Elevation>
+      <Site>
+        <Name>sil</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2017-11-22T14:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="kis" startDate="2016-06-05T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.67413</Latitude>
+      <Longitude unit="DEGREES">-17.56167</Longitude>
+      <Elevation>1567.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2016-06-05T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="ada" startDate="1998-09-19T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">65.01879</Latitude>
+      <Longitude unit="DEGREES">-15.57452</Longitude>
+      <Elevation>443.0</Elevation>
+      <Site>
+        <Name>VI-ada</Name>
+      </Site>
+      <CreationDate>1998-09-19T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="sle" startDate="2018-08-08T17:50:00.000000Z">
+      <Latitude unit="DEGREES">63.9367</Latitude>
+      <Longitude unit="DEGREES">-16.6348</Longitude>
+      <Elevation>870.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2018-08-08T17:50:00.000000Z</CreationDate>
+    </Station>
+    <Station code="he1" startDate="2018-09-13T17:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.99816</Latitude>
+      <Longitude unit="DEGREES">-19.63047</Longitude>
+      <Elevation>1167.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2018-09-13T17:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hn1" startDate="2018-06-14T17:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.00597</Latitude>
+      <Longitude unit="DEGREES">-19.68248</Longitude>
+      <Elevation>959.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2018-06-14T17:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hn2" startDate="2018-09-17T17:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.99742</Latitude>
+      <Longitude unit="DEGREES">-19.68479</Longitude>
+      <Elevation>1084.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2018-09-17T17:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="he2" startDate="2018-09-14T17:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.99683</Latitude>
+      <Longitude unit="DEGREES">-19.64683</Longitude>
+      <Elevation>1328.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2018-09-14T17:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hs1" startDate="2018-09-14T17:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.98922</Latitude>
+      <Longitude unit="DEGREES">-19.68512</Longitude>
+      <Elevation>1374.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2018-09-14T17:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="hs2" startDate="2018-09-15T17:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.99178</Latitude>
+      <Longitude unit="DEGREES">-19.66741</Longitude>
+      <Elevation>1470.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>IS</Country>
+      </Site>
+      <CreationDate>2018-09-15T17:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="svh" startDate="2018-01-17T00:00:00.000000Z">
+      <Latitude unit="DEGREES">63.93404</Latitude>
+      <Longitude unit="DEGREES">-16.50355</Longitude>
+      <Elevation>118.0</Elevation>
+      <Site>
+        <Name>Svarthamrar við Kvíá</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2018-01-17T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="lif" startDate="2018-01-16T00:00:00.000000Z">
+      <Latitude unit="DEGREES">63.93079</Latitude>
+      <Longitude unit="DEGREES">-16.75801</Longitude>
+      <Elevation>145.0</Elevation>
+      <Site>
+        <Name>Litla-Fjall við Kotá</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2018-01-16T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="kap" startDate="2018-10-26T00:00:00.000000Z">
+      <Latitude unit="DEGREES">63.80134</Latitude>
+      <Longitude unit="DEGREES">-16.6488</Longitude>
+      <Elevation>45.0</Elevation>
+      <Site>
+        <Name>Kaplaklif í Ingólfshöfða</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2018-10-26T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="shg" startDate="2018-08-16T00:00:00.000000Z">
+      <Latitude unit="DEGREES">64.0089</Latitude>
+      <Longitude unit="DEGREES">-16.802</Longitude>
+      <Elevation>888.0</Elevation>
+      <Site>
+        <Name>Svarthamragil</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2018-08-16T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="ham" startDate="2014-11-04T21:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.4802</Latitude>
+      <Longitude unit="DEGREES">-17.8222</Longitude>
+      <Elevation>1560.0</Elevation>
+      <Site>
+        <Name>VI-ham</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2014-11-04T21:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="ele" startDate="2019-10-29T00:00:00.000000Z">
+      <Latitude unit="DEGREES">63.4635</Latitude>
+      <Longitude unit="DEGREES">-20.1771</Longitude>
+      <Elevation>80.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2019-10-29T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="lag" startDate="2020-01-28T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.904914</Latitude>
+      <Longitude unit="DEGREES">-22.488445</Longitude>
+      <Elevation>84.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2020-01-28T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="iss" startDate="2020-01-28T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.862968</Latitude>
+      <Longitude unit="DEGREES">-22.302969</Longitude>
+      <Elevation>137.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2020-01-28T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="lsf" startDate="2020-01-28T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.922197</Latitude>
+      <Longitude unit="DEGREES">-22.372208</Longitude>
+      <Elevation>113.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2020-01-28T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="rah" startDate="2015-11-18T14:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.852855</Latitude>
+      <Longitude unit="DEGREES">-22.56794611</Longitude>
+      <Elevation>51.0</Elevation>
+      <Site>
+        <Name>Eldvorp Reykjanes</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2015-11-18T14:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="lfe" startDate="2014-04-10T18:48:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.8838675</Latitude>
+      <Longitude unit="DEGREES">-22.53554833</Longitude>
+      <Elevation>66.0</Elevation>
+      <Site>
+        <Name>IMAGE Reykjanes</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2014-04-10T18:48:00.000000Z</CreationDate>
+    </Station>
+    <Station code="gle" startDate="2020-07-10T16:00:00.000000Z">
+      <Latitude unit="DEGREES">64.022855</Latitude>
+      <Longitude unit="DEGREES">-19.80253</Longitude>
+      <Elevation>450.0</Elevation>
+      <Site>
+        <Name>Glerhaus</Name>
+      </Site>
+      <CreationDate>2020-07-10T16:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="stf" startDate="2020-09-23T09:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.78053</Latitude>
+      <Longitude unit="DEGREES">-23.67996</Longitude>
+      <Elevation>258.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+      </Site>
+      <CreationDate>2020-09-23T09:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="tag" startDate="2020-09-25T23:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.86704</Latitude>
+      <Longitude unit="DEGREES">-23.73238</Longitude>
+      <Elevation>335.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+      </Site>
+      <CreationDate>2020-09-25T23:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="sax" startDate="2020-09-24T23:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.88998</Latitude>
+      <Longitude unit="DEGREES">-23.84285</Longitude>
+      <Elevation>107.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+      </Site>
+      <CreationDate>2020-09-24T23:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="ves" startDate="2000-08-23T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.44291</Latitude>
+      <Longitude unit="DEGREES">-20.28664</Longitude>
+      <Elevation>55.0</Elevation>
+      <Site>
+        <Name>SIL</Name>
+      </Site>
+      <CreationDate>2000-08-23T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="dyn" startDate="2011-09-27T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">64.79086</Latitude>
+      <Longitude unit="DEGREES">-17.36626</Longitude>
+      <Elevation>1209.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+      </Site>
+      <CreationDate>2011-09-27T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="sea" startDate="2021-03-03T12:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.8434</Latitude>
+      <Longitude unit="DEGREES">-22.1112</Longitude>
+      <Elevation>79.0</Elevation>
+      <Site>
+        <Name>Selalda</Name>
+      </Site>
+      <CreationDate>2021-03-03T12:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="ash" startDate="2021-03-03T12:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.9871</Latitude>
+      <Longitude unit="DEGREES">-22.136</Longitude>
+      <Elevation>62.0</Elevation>
+      <Site>
+        <Name>Afstapahraun</Name>
+      </Site>
+      <CreationDate>2021-03-03T12:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="klv" startDate="2021-03-03T12:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.9112</Latitude>
+      <Longitude unit="DEGREES">-21.9582</Longitude>
+      <Elevation>157.0</Elevation>
+      <Site>
+        <Name>Kleifarvatn</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2021-03-03T12:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="moh" startDate="2021-03-03T12:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.91995</Latitude>
+      <Longitude unit="DEGREES">-22.05954</Longitude>
+      <Elevation>264.0</Elevation>
+      <Site>
+        <Name>Móhálsadalur</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2021-03-03T12:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="lat" startDate="2021-03-03T12:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.8582</Latitude>
+      <Longitude unit="DEGREES">-22.1869</Longitude>
+      <Elevation>75.0</Elevation>
+      <Site>
+        <Name>Latur</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2021-03-03T12:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="odf" startDate="2021-03-04T00:00:00.000000Z">
+      <Latitude unit="DEGREES">63.9469</Latitude>
+      <Longitude unit="DEGREES">-22.119</Longitude>
+      <Elevation>60.0</Elevation>
+      <Site>
+        <Name>Oddafell</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2021-03-04T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="faf" startDate="2021-03-03T12:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.9064</Latitude>
+      <Longitude unit="DEGREES">-22.2148</Longitude>
+      <Elevation>186.0</Elevation>
+      <Site>
+        <Name>Fagradalsfjall</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2021-03-03T12:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="mer" startDate="2021-03-30T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.89121</Latitude>
+      <Longitude unit="DEGREES">-22.25702</Longitude>
+      <Elevation>288.0</Elevation>
+      <Site>
+        <Name>Meradalir</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2021-03-30T00:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="grh" startDate="2021-06-02T15:00:00.000000Z">
+      <Latitude unit="DEGREES">64.4067</Latitude>
+      <Longitude unit="DEGREES">-17.2664</Longitude>
+      <Elevation>1725.0</Elevation>
+      <Site>
+        <Name>Grimsfjall</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2021-06-02T15:00:00.000000Z</CreationDate>
+    </Station>
+    <Station code="sgi" startDate="2021-06-23T14:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">63.863371</Latitude>
+      <Longitude unit="DEGREES">-22.32921</Longitude>
+      <Elevation>177.0</Elevation>
+      <Site>
+        <Name>IMO</Name>
+        <Country>Iceland</Country>
+      </Site>
+      <CreationDate>2021-06-23T14:00:00.000000Z</CreationDate>
+    </Station>
+  </Network>
+</FDSNStationXML>
