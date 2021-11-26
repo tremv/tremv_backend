@@ -447,7 +447,12 @@ class program:
                 logging.info("Using cached metadata inventory.")
 
         for s in self.metadata_inventory.networks[0]:
-            if(s not in self.config["station_blacklist"]):
+            add_station = True
+            if("station_blacklist" in self.config):
+                if(s in self.config["station_blacklist"]):
+                    add_station = False
+
+            if(add_station):
                 stations_in_network.append(s.code)
 
         log_path = common.logger_output_path(fetch_starttime)
