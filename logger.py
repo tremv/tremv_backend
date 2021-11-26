@@ -448,7 +448,7 @@ class program:
 
         for s in self.metadata_inventory.networks[0]:
             add_station = True
-            if("station_blacklist" in self.config):
+            if("station_blacklist" in self.config.config):
                 if(s in self.config["station_blacklist"]):
                     add_station = False
 
