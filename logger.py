@@ -496,7 +496,7 @@ class program:
                 if(response is None):
                     received_station_waveforms.remove(trace)
                 else:
-                    counts_to_um = response.instrument_sensitivity.value / 100000
+                    counts_to_um = response.instrument_sensitivity.value / 1000000
 
                     for i in range(0, len(trace.data)):
                         trace.data[i] /= counts_to_um
