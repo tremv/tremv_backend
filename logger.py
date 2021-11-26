@@ -383,9 +383,9 @@ class program:
     def read_response_from_file(self):
         if(os.path.exists(self.response_filename)):
             logging.info("Falling back to response file.")
-            response_lock.acquire()
+            self.response_lock.acquire()
             self.response_inventory = obspy.read_inventory(self.response_filename)
-            response_lock.release()
+            self.response_lock.release()
         else:
             self.exit = True
             logging.error("No response file was found. Aborting program.")
@@ -394,7 +394,7 @@ class program:
 
     def fetch_response_inventory(self):
         logging.info("Fetching response inventory...")
-        response_lock.acquire()
+        self.response_lock.acquire()
 
         try:
             inv = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")#TODO station wildcard from config file?
@@ -408,7 +408,7 @@ class program:
             else:
                 logging.info("Using cached response inventory.")
 
-        response_lock.release()
+        self.response_lock.release()
 
 
     def fetch_response_inventory_threaded():
@@ -473,7 +473,7 @@ class program:
 
             pre_processed_stations = process_station_data(received_station_waveforms)
 
-            response_lock.acquire()
+            self.response_lock.acquire()
             for trace in received_station_waveforms:
                 name = trace.stats.station
                 seed_identifier = self.config["network"] + "." + name + ".." + self.config["channels"]
@@ -486,7 +486,7 @@ class program:
                 """
                 for i in range(0, len(trace.data)):
                     trace.data[i] /= counts_to_um
-            response_lock.release()
+            self.response_lock.release()
 
             per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
             rsam_results = rsam_processing(per_filter_filtered_stations, filters, stations_in_network)
