@@ -486,15 +486,20 @@ class program:
             for trace in received_station_waveforms:
                 name = trace.stats.station
                 seed_identifier = self.config["network"] + "." + name + ".." + self.config["channels"]
-                response = self.response_inventory.get_response(seed_identifier, fetch_starttime)
-                counts_to_um = response.instrument_sensitivity.value / 100000
-                """
-                File "logger.py", line 471, in main
-                    trace.data /= counts_to_um
-                TypeError: ufunc 'true_divide' output (typecode 'd') could not be coerced to provided output parameter (typecode 'i') according to the casting rule ''same_kind''
-                """
-                for i in range(0, len(trace.data)):
-                    trace.data[i] /= counts_to_um
+                response = None
+
+                try:
+                    response = self.response_inventory.get_response(seed_identifier, fetch_starttime)
+                except Exception as e:
+                    logging.error("No response info found for " + seed_identifier +". Trace will be removed.")
+
+                if(response is None):
+                    received_station_waveforms.remove(trace)
+                else:
+                    counts_to_um = response.instrument_sensitivity.value / 100000
+
+                    for i in range(0, len(trace.data)):
+                        trace.data[i] /= counts_to_um
             self.response_lock.release()
 
             per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
