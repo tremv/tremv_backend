@@ -359,7 +359,11 @@ class program:
         self.exit = False#used so we can tell the program to exit from a thread
 
         self.fdsn_connect()
-        self.fetch_response_inventory()
+
+        if(os.path.exists(self.response_filename)):
+            self.read_response_from_file()
+        else:
+            self.fetch_response_inventory()
 
 
     def fdsn_connect(self):
