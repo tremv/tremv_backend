@@ -361,8 +361,6 @@ class program:
         self.fdsn_connect()
         self.fetch_response_inventory()
 
-        #TODO:Reyna tengjast aftur ef eitthvað fer úrskeiðis?
-        self.seedlink = seedlinkClient(self.config["seedlink_address"], self.config["seedlink_port"], 5, False)
 
     def fdsn_connect(self):
         try:
@@ -457,12 +455,17 @@ class program:
         if(os.path.exists(log_path) == False):
             os.makedirs(log_path)
 
-        #TODO: skrifa 0 ef við fáum engin gögn? TODO
-        #Já, eins og er ætti það að vera þannig en þegar hdf5 er komið ætti það að vera óþarfi
+        seedlink = None
+
         try:
+            seedlink = seedlinkClient(self.config["seedlink_address"], self.config["seedlink_port"], 5, False)
+        except Exception as e:
+            logging.error("Could not connect to seedlink server.")
+            logging.info(e)
+
+        if(seedlink is not None):
             logging.info("Fetching waveforms...")
             received_station_waveforms = self.seedlink.get_waveforms(self.config["network"], self.config["station_wildcard"], self.config["location_wildcard"], self.config["channels"], data_starttime, fetch_starttime)
-
             logging.info("Retrieval of metadata and waveforms took " + str(UTCDateTime() - fetch_starttime))
 
             filters = self.config["filters"]
@@ -481,10 +484,8 @@ class program:
                     trace.data /= counts_to_um
                 TypeError: ufunc 'true_divide' output (typecode 'd') could not be coerced to provided output parameter (typecode 'i') according to the casting rule ''same_kind''
                 """
-                #TODO TODO TODO
-                #Fæ error hér???
-                #TODO TODO TODO
-                trace.data /= counts_to_um
+                for i in range(0, len(trace.data)):
+                    trace.data[i] /= counts_to_um
             response_lock.release()
 
             per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
@@ -505,9 +506,6 @@ class program:
                 except:
                     logging.info("Alert module could not be run.")
 
-        except Exception as e:
-            logging.error("Could not get station waveforms from the seedlink server.")
-            logging.info(e)
 
 
 
