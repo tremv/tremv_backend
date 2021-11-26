@@ -470,7 +470,7 @@ class program:
 
         if(seedlink is not None):
             logging.info("Fetching waveforms...")
-            received_station_waveforms = self.seedlink.get_waveforms(self.config["network"], self.config["station_wildcard"], self.config["location_wildcard"], self.config["channels"], data_starttime, fetch_starttime)
+            received_station_waveforms = seedlink.get_waveforms(self.config["network"], self.config["station_wildcard"], self.config["location_wildcard"], self.config["channels"], data_starttime, fetch_starttime)
             logging.info("Retrieval of metadata and waveforms took " + str(UTCDateTime() - fetch_starttime))
 
             filters = self.config["filters"]
