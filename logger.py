@@ -345,10 +345,9 @@ def write_tremvlog_rsam(filename, delim, time, stations, rsam, filt_index):
 class program:
     def __init__(self):
         logging.basicConfig(
-            filename="debug.log",
-            encoding="utf-8",
             level=logging.INFO,
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            handlers=[logging.StreamHandler(), logging.FileHandler("debug.log")]
         )
 
         self.config = config.config("config.json")
