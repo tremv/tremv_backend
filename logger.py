@@ -345,6 +345,8 @@ def write_tremvlog_rsam(filename, delim, time, stations, rsam, filt_index):
 class program:
     def __init__(self):
         logging.basicConfig(
+            filename="debug.log",
+            encoding="utf-8",
             level=logging.INFO,
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
@@ -519,8 +521,6 @@ class program:
                     alert.main(data_starttime, filters, station_channel)
                 except:
                     logging.info("Alert module could not be run.")
-
-
 
 
 if __name__ == "__main__":
