@@ -406,6 +406,7 @@ class program:
             self.response_inventory = inv
             self.response_lock.release()
             self.response_inventory.write(self.response_filename, format="STATIONXML")
+            logging.info("Wrote response inventory to file.")
         except Exception as e:
             logging.error("Could not get response inventory from the fdsn server.")
             logging.info(e)
@@ -429,6 +430,9 @@ class program:
         self.config.reload()
         self.fdsn_connect()
 
+        #TODO TODO TODO
+        #TODO á þetta að koma seinna????
+        #TODO TODO TODO
         fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
 
@@ -443,6 +447,7 @@ class program:
             metadata = self.fdsn.get_stations(network=self.config["network"], station="*", starttime=data_starttime, endtime=fetch_starttime)
             self.metadata_inventory = metadata
             self.metadata_inventory.write(self.metadata_filename, format="STATIONXML")
+            logging.info("Wrote metadata inventory to file.")
         except Exception as e:
             logging.error("Could not get stations metadata from the fdsn server.")
             logging.info(e)
