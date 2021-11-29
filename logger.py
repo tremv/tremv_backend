@@ -517,7 +517,7 @@ class program:
             datestr = str(data_starttime.year) + "." + str(data_starttime.month) + "." + str(data_starttime.day)
             logging.info("Wrote to files " + datestr + " at: " + str(UTCDateTime()))
 
-            if("alert_on" in self.config.config and self.config["alert_on"] == "True"):
+            if("alert_on" in self.config.config and self.config["alert_on"] == True):
                 try:
                     # Runs tremv_alert module
                     alert.main(data_starttime, filters, station_channel)
