@@ -416,7 +416,7 @@ class program:
 
 
 
-    def fetch_response_inventory_threaded():
+    def fetch_response_inventory_threaded(self):
         thread = threading.Thread(target=self.fetch_response_inventory)
         thread.start()
 
