@@ -430,9 +430,7 @@ class program:
         self.config.reload()
         self.fdsn_connect()
 
-        #TODO TODO TODO
-        #TODO á þetta að koma seinna????
-        #TODO TODO TODO
+        #NOTE: er þetta réttur staður fyrir þennan timestamp?
         fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
 
