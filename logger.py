@@ -399,11 +399,12 @@ class program:
 
     def fetch_response_inventory(self):
         logging.info("Fetching response inventory...")
-        self.response_lock.acquire()
 
         try:
             inv = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")#TODO station wildcard from config file?
+            self.response_lock.acquire()
             self.response_inventory = inv
+            self.response_lock.release()
             self.response_inventory.write(self.response_filename, format="STATIONXML")
         except Exception as e:
             logging.error("Could not get response inventory from the fdsn server.")
@@ -413,7 +414,6 @@ class program:
             else:
                 logging.info("Using cached response inventory.")
 
-        self.response_lock.release()
 
 
     def fetch_response_inventory_threaded():
