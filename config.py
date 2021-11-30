@@ -19,8 +19,8 @@ class config:
             config_file = open(self.filename, "r")
             self.config = json.loads(config_file.read())
             config_file.close()
-        except:
-            logging.error("Please define a config.json file.")
+        except Exception as e:
+            logging.error(e)
             sys.exit(1)
 
 
