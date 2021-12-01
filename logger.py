@@ -345,10 +345,10 @@ def write_tremvlog_rsam(filename, delim, time, stations, rsam, filt_index):
 #NOTE: This stuff is needed so we get output from uncaught exceptions in the debug.log file
 def log_uncaught_exception_main(exc_type, exc_value, exc_traceback):
     sys.__excepthook__(exc_type, exc_value, exc_traceback)
-    logging.critical(f"uncaught exception:", exc_info=(exc_type, exc_value, exc_traceback))
+    logging.critical("uncaught exception:", exc_info=(exc_type, exc_value, exc_traceback))
 
 def log_uncaught_exception_threading(args):
-    logging.critical(f"uncaught exception in thread {}:".format(args.thread.name), exc_info=(args.exc_type, args.exc_value, args.exc_traceback))
+    logging.critical("uncaught exception in thread {}:".format(args.thread.name), exc_info=(args.exc_type, args.exc_value, args.exc_traceback))
 
 sys.excepthook = log_uncaught_exception_main
 threading.excepthook = log_uncaught_exception_threading
