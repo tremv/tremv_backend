@@ -336,11 +336,23 @@ def write_tremvlog_rsam(filename, delim, time, stations, rsam, filt_index):
 
     output.close()
 
+#TODO:  git double upstream
 
 #TODO:  there is an unchecked assumption here that each trace in the recieved waveforms includes only one station,
 #       which seems to be true, but we never actually verify it...
 
 #TODO: the name 'network' in the config file is ambiguous
+
+#NOTE: This stuff is needed so we get output from uncaught exceptions in the debug.log file
+def log_uncaught_exception_main(exc_type, exc_value, exc_traceback):
+    sys.__excepthook__(exc_type, exc_value, exc_traceback)
+    logging.critical(f"uncaught exception: {str(exc_value)}")
+
+def log_uncaught_exception_threading(args):
+    logging.critical(f"uncaught exception in thread {args.thread.name}: {str(args.exc_value)}")
+
+sys.excepthook = log_uncaught_exception_main
+threading.excepthook = log_uncaught_exception_threading
 
 class program:
     def __init__(self):
@@ -419,6 +431,7 @@ class program:
 
     def fetch_response_inventory_threaded(self):
         thread = threading.Thread(target=self.fetch_response_inventory)
+        thread.name = "response_fetch_thread"
         thread.start()
 
 
