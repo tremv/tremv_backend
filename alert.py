@@ -641,9 +641,7 @@ def initiate_audio_alarm(timestamp):
 
 
 def main(starttime, logger_filters, channel):
-
-    alert_config_filename = "alert_config.json"
-    alert_config = common.read_tremv_config(alert_config_filename)
+    alert_config = common.config("alert_config.json")
 
     AlertInfo.filter_list = logger_filters # import filters in data structure from tremv_logger
 

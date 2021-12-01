@@ -362,7 +362,7 @@ class program:
             handlers=[logging.StreamHandler(), logging.FileHandler("debug.log")]
         )
 
-        self.config = config.config("config.json")
+        self.config = common.config("config.json")
         self.response_filename = ".resp.xml"#TODO: setja í config eða environment?
         self.metadata_filename = ".meta.xml"
         self.fdsn = None
