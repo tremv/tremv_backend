@@ -263,22 +263,24 @@ def write_tremvlog_zeroes(filename, delim, time):
     timestamps = common.read_tremvlog_timestamps(file_path, delim)  #### import this timestamps variable
     station_names_in_file = common.read_tremvlog_stations(file_path, delim)
 
-    # file_exists = os.path.exists(filename)
-
     # do the actual appending of new data...
     output = open(filename, "a")
-    start_timestamp = str(time)  # string of UTC starttime
+    start_timestamp = time  # string of UTC starttime
 
     if (os.path.exists(filename)):
+        #NOTE(thordur): added this to default the beginning of the day if there are no timestamps in a file(this happened...)
+        SEC_IN_DAY = 60*60*24
+        last_timestamp = UTCDateTime((int(UTCDateTime().timestamp) // SEC_IN_DAY) * SEC_IN_DAY)
 
-        last_timestamp = timestamps[-1]
+        if(len(timestamps) > 0):
+            last_timestamp = UTCDateTime(timestamps[-1])
 
-        last_timestamp_min = int(last_timestamp[14:16])  # most recently written timestamp minute
-        timestamp_min = int(start_timestamp[14:16])  # current timestamp minute to be written
+        last_timestamp_min = last_timestamp.minute  # most recently written timestamp minute
+        timestamp_min = start_timestamp.minute  # current timestamp minute to be written
         check_timestamp_min = last_timestamp_min + 1  # should be equal to timestamp_min if one minute has passed
 
-        last_timestamp_hr = int(last_timestamp[11:13])  # most recently written timestamp hour
-        timestamp_hr = int(start_timestamp[11:13])  # current timestamp hour to be written
+        last_timestamp_hr = last_timestamp.hour  # most recently written timestamp hour
+        timestamp_hr = start_timestamp.hour  # current timestamp hour to be written
         check_timestamp_hr = last_timestamp_hr + 1  # should be equal to timestamp_hr if one hour has passed
 
         # check difference between current timestamp and file timestamp
