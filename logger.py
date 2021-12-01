@@ -12,7 +12,6 @@ from obspy.clients.seedlink.basic_client import Client as seedlinkClient
 from obspy.clients.fdsn import Client as fdsnClient
 from obspy import UTCDateTime
 import common
-import config
 import alert
 import threading
 import logging
