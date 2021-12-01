@@ -534,8 +534,9 @@ class program:
                 try:
                     # Runs tremv_alert module
                     alert.main(data_starttime, filters, station_channel)
-                except:
-                    logging.info("Alert module could not be run.")
+                except Exception as e:
+                    logging.error("Alert module could not be run.")
+                    logging.error(e)
 
 
 if __name__ == "__main__":
