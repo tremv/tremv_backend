@@ -63,7 +63,7 @@ def trace_average(trace):
     for n in trace.data:
         s += abs(n)
 
-    return(s/pts_per_minute)
+    return(s/len(trace.data))
 
 
 """ Averages values for a given station over a minute and prepares the averages as
