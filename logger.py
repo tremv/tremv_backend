@@ -63,7 +63,7 @@ def trace_average(trace):
     for n in trace.data:
         s += abs(n)
 
-    return(s/len(trace.data))
+    return(s/pts_per_minute)
 
 
 """ Averages values for a given station over a minute and prepares the averages as
@@ -498,7 +498,7 @@ class program:
             pre_processed_stations = process_station_data(received_station_waveforms)
 
             self.response_lock.acquire()
-            for trace in received_station_waveforms:
+            for trace in pre_processed_stations:
                 name = trace.stats.station
                 seed_identifier = self.config["network"] + "." + name + ".." + self.config["channels"]
                 response = None
