@@ -634,8 +634,9 @@ def ring_audio_alarm(filters, silence, max_audio, time):
 def initiate_audio_alarm(timestamp):
 
     try:
-        import trigger_audio
-        trigger_audio.run()
+        print("triggering audio would happen now")
+        #import trigger_audio
+        #trigger_audio.run()
     except:
         print("ALERT Error: Audio alarm module trigger_audio.run() could not be run at " + str(timestamp) + ".")
 
