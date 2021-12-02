@@ -511,7 +511,7 @@ class program:
                         trace.data[i] /= counts_to_um
                 except Exception as e:
                     logging.error("No response info found for " + seed_identifier +". Trace will be removed.")
-                    received_station_waveforms.remove(trace)
+                    pre_processed_stations.remove(trace)
             self.response_lock.release()
 
             per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
