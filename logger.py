@@ -59,7 +59,11 @@ def apply_bandpass_filters(traces, filters):
 def trace_average(trace):
     pts_per_minute = int(trace.stats.sampling_rate * 60)
 
-    return(sum(abs(trace.data))/pts_per_minute)
+    s = 0
+    for n in trace.data:
+        s += abs(n)
+
+    return(s/pts_per_minute)
 
 
 """ Averages values for a given station over a minute and prepares the averages as
@@ -267,6 +271,7 @@ def write_tremvlog_zeroes(filename, delim, time):
     output = open(filename, "a")
     start_timestamp = time  # string of UTC starttime
 
+    #TODO: það gerðist eitthvað hér eftir miðnætti, ótrúlegt en satt
     if (os.path.exists(filename)):
         #NOTE(thordur): added this to default the beginning of the day if there are no timestamps in a file(this happened...)
         SEC_IN_DAY = 60*60*24
@@ -286,15 +291,7 @@ def write_tremvlog_zeroes(filename, delim, time):
         # check difference between current timestamp and file timestamp
         min_since_last_write = (timestamp_min - last_timestamp_min) + (timestamp_hr - last_timestamp_hr) * 60 - 1
 
-        # accounts for uninterrupted data progression
-        if (timestamp_min == check_timestamp_min and timestamp_hr == last_timestamp_hr):
-            pass
-
-        # accounts for uninterrupted hour boundry
-        elif (timestamp_min == 00 and last_timestamp_min == 59 and timestamp_hr == check_timestamp_hr):
-            pass
-
-        elif (timestamp_min != check_timestamp_min or timestamp_hr != check_timestamp_hr):
+        if (timestamp_min != check_timestamp_min or timestamp_hr != check_timestamp_hr):
             i = min_since_last_write
 
             while i != 0:
@@ -510,14 +507,12 @@ class program:
                     response = self.response_inventory.get_response(seed_identifier, fetch_starttime)
                 except Exception as e:
                     logging.error("No response info found for " + seed_identifier +". Trace will be removed.")
-
-                if(response is None):
                     received_station_waveforms.remove(trace)
-                else:
-                    counts_to_um = response.instrument_sensitivity.value / 1000000
 
-                    for i in range(0, len(trace.data)):
-                        trace.data[i] /= counts_to_um
+                counts_to_um = response.instrument_sensitivity.value / 1000000
+
+                for i in range(0, len(trace.data)):
+                    trace.data[i] /= counts_to_um
             self.response_lock.release()
 
             per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
