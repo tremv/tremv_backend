@@ -15,6 +15,7 @@ import common
 import alert
 import threading
 import logging
+import ipdb
 
 
 """ Apply lowpass filter to the data and downsample it from 100 points per minute
@@ -271,7 +272,6 @@ def write_tremvlog_zeroes(filename, delim, time):
     output = open(filename, "a")
     start_timestamp = time  # string of UTC starttime
 
-    #TODO: það gerðist eitthvað hér eftir miðnætti, ótrúlegt en satt
     if (os.path.exists(filename)):
         #NOTE(thordur): added this to default the beginning of the day if there are no timestamps in a file(this happened...)
         SEC_IN_DAY = 60*60*24
@@ -280,31 +280,21 @@ def write_tremvlog_zeroes(filename, delim, time):
         if(len(timestamps) > 0):
             last_timestamp = UTCDateTime(timestamps[-1])
 
-        last_timestamp_min = last_timestamp.minute  # most recently written timestamp minute
-        timestamp_min = start_timestamp.minute  # current timestamp minute to be written
-        check_timestamp_min = last_timestamp_min + 1  # should be equal to timestamp_min if one minute has passed
+        last_timestamp_minutes = int(last_timestamp.timestamp) // 60
+        current_timestamp_minutes = int(time.timestamp) // 60
 
-        last_timestamp_hr = last_timestamp.hour  # most recently written timestamp hour
-        timestamp_hr = start_timestamp.hour  # current timestamp hour to be written
-        check_timestamp_hr = last_timestamp_hr + 1  # should be equal to timestamp_hr if one hour has passed
+        minute_delta = current_timestamp_minutes - last_timestamp_minutes
 
-        # check difference between current timestamp and file timestamp
-        min_since_last_write = (timestamp_min - last_timestamp_min) + (timestamp_hr - last_timestamp_hr) * 60 - 1
+        for i in range(1, minute_delta):
+            output.write(str(UTCDateTime((last_timestamp_minutes + i) * 60)) + str(delim))
 
-        if (timestamp_min != check_timestamp_min or timestamp_hr != check_timestamp_hr):
-            i = min_since_last_write
+            for j in range(0, len(station_names_in_file)):
+                output.write(str(0.0))
 
-            while i != 0:
-                output.write(str(time - i * 60) + str(delim))  # time was timestamps
-                i = i - 1
-
-                for j in range(0, len(station_names_in_file)):
-                    output.write(str(0.0))
-
-                    if (j == len(station_names_in_file) - 1):
-                        output.write("\n")
-                    else:
-                        output.write(delim)
+                if (j == len(station_names_in_file) - 1):
+                    output.write("\n")
+                else:
+                    output.write(delim)
 
         output.close()
 
