@@ -8,6 +8,8 @@ import json
 import datetime
 import logging
 
+# er að athuga smá
+
 #a wrapper around the json config
 class config:
     def __init__(self, filename):
