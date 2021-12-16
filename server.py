@@ -7,7 +7,6 @@ import math
 import datetime
 import common
 import config
-from pytremlog import pytremlog
 
 import obspy
 from obspy.clients.fdsn import Client as fdsnClient
@@ -230,10 +229,7 @@ class api(object):
                                                 rsam_data[name][k] = math.log(rsam_data[name][k])*1000
 
                     if(file_read == False):
-                        tremlog = pytremlog.get(date.year, date.month, date.day, log_transform=do_log_transform)
-                        #TODO: maybe not the most robust thing...
-                        std_filter_index = self.standard_filters.index(f)
-                        rsam_data = tremlog.values_z[std_filter_index]
+                        print("Could not find requested data.")
 
                     for name in list(available_stations.keys()):
                         if(name in rsam_data):

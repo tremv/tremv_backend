@@ -1,0 +1,3 @@
+obspy
+schedule
+CherryPy
