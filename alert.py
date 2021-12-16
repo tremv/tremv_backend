@@ -629,19 +629,7 @@ def ring_audio_alarm(filters, silence, max_audio, time):
     return(ring_alarm)
 
 
-""" If the ring_alarm variable is True, this function initiates the audio alarm to sound.
-"""
-def initiate_audio_alarm(timestamp):
-
-    try:
-        print("triggering audio would happen now")
-        #import trigger_audio
-        #trigger_audio.run()
-    except:
-        print("ALERT Error: Audio alarm module trigger_audio.run() could not be run at " + str(timestamp) + ".")
-
-
-def main(starttime, logger_filters, channel):
+def main(starttime, logger_filters, channel, alert_hook=None):
     alert_config = common.config("alert_config.json")
 
     AlertInfo.filter_list = logger_filters # import filters in data structure from tremv_logger
@@ -674,8 +662,9 @@ def main(starttime, logger_filters, channel):
 
     silence_muted_stations(alert_config["mute_stations"], alert_config["station_votes"], voting, logger_filters)
     silence_muted_filters(alert_config["mute_filters"], logger_filters)
-    ring_alarm=ring_audio_alarm(logger_filters,alert_config["silence_audio"],alert_config["max_audio_per_hr"],starttime)
+    run_alert_hook=ring_audio_alarm(logger_filters,alert_config["silence_audio"],alert_config["max_audio_per_hr"],starttime)
 
-    # initiates trigger_audio.trigger() script to create sound if ring_alarm == True
-    if(ring_alarm == True):
-        initiate_audio_alarm(starttime)
+    if(run_alert_hook == True):
+        print("Triggering alert hook.")
+        if(alert_hook):
+            alert_hook()

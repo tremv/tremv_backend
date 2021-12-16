@@ -6,7 +6,6 @@ import os
 import sys
 import time
 import schedule
-# import netCDF4 as netcdf # unused import statement
 import obspy
 from obspy.clients.seedlink.basic_client import Client as seedlinkClient
 from obspy.clients.fdsn import Client as fdsnClient
@@ -15,7 +14,6 @@ import common
 import alert
 import threading
 import logging
-import ipdb
 
 
 """ Apply lowpass filter to the data and downsample it from 100 points per minute
@@ -351,7 +349,7 @@ class program:
         )
 
         self.config = common.config("config.json")
-        self.response_filename = ".resp.xml"#TODO: setja í config eða environment?
+        self.response_filename = ".resp.xml"
         self.metadata_filename = ".meta.xml"
         self.fdsn = None
         self.response_inventory = None
