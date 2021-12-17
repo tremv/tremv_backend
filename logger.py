@@ -349,8 +349,6 @@ class program:
         )
 
         self.config = common.config("config.json")
-        self.response_filename = ".resp.xml"
-        self.metadata_filename = ".meta.xml"
         self.fdsn = None
         self.response_inventory = None
         self.metadata_inventory = None
@@ -359,7 +357,7 @@ class program:
 
         self.fdsn_connect()
 
-        if(os.path.exists(self.response_filename)):
+        if(os.path.exists(self.config["response_filename"])):
             self.read_response_from_file()
         else:
             self.fetch_response_inventory()
@@ -375,19 +373,19 @@ class program:
 
 
     def read_metadata_from_file(self):
-        if(os.path.exists(self.metadata_filename)):
+        if(os.path.exists(self.config["metadata_filename"])):
             logging.info("Falling back to metadata file.")
-            self.metadata_inventory = obspy.read_inventory(self.metadata_filename)
+            self.metadata_inventory = obspy.read_inventory(self.config["metadata_filename"])
         else:
             logging.error("No metadata file was found. Aborting program.")
             sys.exit(1)
 
 
     def read_response_from_file(self):
-        if(os.path.exists(self.response_filename)):
+        if(os.path.exists(self.config["response_filename"])):
             logging.info("Falling back to response file.")
             self.response_lock.acquire()
-            self.response_inventory = obspy.read_inventory(self.response_filename)
+            self.response_inventory = obspy.read_inventory(self.config["response_filename"])
             self.response_lock.release()
         else:
             self.exit = True
@@ -403,7 +401,7 @@ class program:
             self.response_lock.acquire()
             self.response_inventory = inv
             self.response_lock.release()
-            self.response_inventory.write(self.response_filename, format="STATIONXML")
+            self.response_inventory.write(self.config["response_filename"], format="STATIONXML")
             logging.info("Wrote response inventory to file.")
         except Exception as e:
             logging.error("Could not get response inventory from the fdsn server.")
@@ -443,7 +441,7 @@ class program:
             logging.info("Fetching metadata inventory...")
             metadata = self.fdsn.get_stations(network=self.config["network"], station="*", starttime=data_starttime, endtime=fetch_starttime)
             self.metadata_inventory = metadata
-            self.metadata_inventory.write(self.metadata_filename, format="STATIONXML")
+            self.metadata_inventory.write(self.config["metadata_filename"], format="STATIONXML")
             logging.info("Wrote metadata inventory to file.")
         except Exception as e:
             logging.error("Could not get stations metadata from the fdsn server.")
