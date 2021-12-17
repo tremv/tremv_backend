@@ -18,17 +18,16 @@ class api(object):
         self.standard_filters = [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]]
         self.config = config.config("config.json")#TODO: environment variable
         self.fdsn = fdsnClient(self.config["fdsn_address"])
-        self.response_filename = ".resp.xml"#TODO: environment variable
         self.response_inventory = None
 
         #TODO: maybe we should just wait here for the logger to get the inv file???
         #we just need to do this once so we can get response info for old data
         print("Getting response_inventory file...")
-        if(os.path.exists(self.response_filename)):
-            self.response_inventory = obspy.read_inventory(self.response_filename)
+        if(os.path.exists(self.config["response_filename"])):
+            self.response_inventory = obspy.read_inventory(self.config["response_filename"])
         else:
             inv = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")
-            inv.write(self.response_filename, format="STATIONXML")
+            inv.write(self.config["response_filename"], format="STATIONXML")
             self.response_inventory = inv
 
     def jsonResult(self, filters):
