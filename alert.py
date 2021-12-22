@@ -507,8 +507,12 @@ def write_catalog(time, filters, minimum_event_gap):
     alert_status = AlertInfo.alert_on
 
     # currently hardcoded, allows proper space for more than enough events per month
-    s = "    "
-    first_line = "EventID" + s + "TriggerTime                " + s + "Filter      " + s + "Stations\n"
+    #s = "    "
+    #s = "    "
+    #first_line = "EventID" + s + "TriggerTime                " + s + "Filter      " + s + "Stations\n"
+    #NOTE(thordur): I changed this to facilitate programmatic reading of the catalog files(i.e. reading them to a dict)
+    delim = "\t"
+    first_line = "EventID" + delim + "TriggerTime" + delim + "Filter" + delim + "Stations\n"
 
     event_info = AlertInfo.current_eventID
 
@@ -539,11 +543,11 @@ def write_catalog(time, filters, minimum_event_gap):
                         audio[filter_name] = False
                     else:
                         # returns event_info for AlertInfo.current_event_id
-                        event_info = catalog_new_event(time, filter_name, event_info, prev_info, stations, first_line,s)
+                        event_info = catalog_new_event(time, filter_name, event_info, prev_info, stations, first_line, delim)
                         audio[filter_name] = True  # sets audio alarm dictionary to true for given minute
                 except:
                     # returns event_info for AlertInfo.current_event_id
-                    event_info = catalog_new_event(time, filter_name, event_info, prev_info, stations, first_line, s)
+                    event_info = catalog_new_event(time, filter_name, event_info, prev_info, stations, first_line, delim)
                     audio[filter_name] = True  # sets audio alarm dictionary to true for given minute
 
             elif(alert_status[filter_name] == True):
