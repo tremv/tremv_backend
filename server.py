@@ -6,18 +6,19 @@ import sys
 import math
 import datetime
 import common
-import config
 
 import obspy
 from obspy.clients.fdsn import Client as fdsnClient
 from obspy import UTCDateTime
 
-#TODO: ég breytti einhverjum nöfnum, self.response_inventory og eitthvað...
 class api(object):
     def __init__(self):
         self.standard_filters = [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]]
-        self.config = config.config("config.json")#TODO: environment variable
+        self.config = common.config("config.json")#TODO: environment variable
         self.fdsn = fdsnClient(self.config["fdsn_address"])
+
+        #TODO: er einhver þörf fyrir að lesa inventory hér???
+        """
         self.response_inventory = None
 
         #TODO: maybe we should just wait here for the logger to get the inv file???
@@ -29,6 +30,7 @@ class api(object):
             inv = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")
             inv.write(self.config["response_filename"], format="STATIONXML")
             self.response_inventory = inv
+        """
 
     def jsonResult(self, filters):
         result = {}
@@ -250,15 +252,43 @@ class frontend(object):
     def __init__(self):
         pass
 
+class catalog(object):
+    @cherrypy.expose
+    def default(self, *args):
+        path = "tremor_catalog/"
+        date = datetime.date.today()
+        year = date.year
+        month = date.month
+
+        if(len(args) > 0):
+            year = int(args[0])
+            month = int(args[1])
+
+        path += str(year) + "/" + str(year) + "." + str(month) + "_tremor_catalog.txt"
+
+        catalog = common.read_csv_to_dict(path, sep="\t")
+        print(len(catalog["TriggerTime"]))
+
+        #TODO: Setja þetta upp í töflu
+
+        return """
+        <html>
+            hello world!
+        </html>
+        """
+
 #TODO: support querying for an arbritrary date range, not just a specific date
 if(__name__ == "__main__"):
+    """
     if(len(sys.argv) == 1):
         print("Server port argument is required.")
         sys.exit()
+    """
 
     cherrypy.server.socket_host = "0.0.0.0"
-    cherrypy.server.socket_port = int(sys.argv[1])
+    #cherrypy.server.socket_port = int(sys.argv[1])
     cherrypy.tree.mount(api(), "/api")
+    cherrypy.tree.mount(catalog(), "/catalog")
 
     if hasattr(cherrypy.engine, 'block'):
         # 3.1 syntax
