@@ -385,7 +385,7 @@ def trigger(vote, votes_needed):
 
 """ Creates new event in catalog and new file, if necessary. Returns event_info (for filter, give time & eventID).
 """
-def catalog_new_event(current_time, current_filter, current_info, previous_info, current_stations, line_one, space):
+def catalog_new_event(current_time, current_filter, current_info, previous_info, current_stations, line_one, delim):
 
     # defines file path of new catalog (or of existing catalog) based on current time
     cat_path = ("tremor_catalog/" + str(current_time.year) + "/")
@@ -427,12 +427,14 @@ def catalog_new_event(current_time, current_filter, current_info, previous_info,
     write_filter = str(current_filter).replace(" ", "")
 
     # allotted space for written variables (somewhat arbitrary, but nice for reading)
-    id_space = (7 - len(str(eventID))) * " " + space
-    time_space = (27 - len(str(current_time))) * " " + space
-    filter_space = (12 - len(str(write_filter))) * " " + space
+    """
+    id_space = (7 - len(str(eventID))) * " " + delim
+    time_space = (27 - len(str(current_time))) * " " + delim
+    filter_space = (12 - len(str(write_filter))) * " " + delim
+    """
 
     catalog = open(file_path, "a")
-    catalog.write(str(eventID) + id_space + str(current_time) + time_space + str(write_filter) + filter_space +
+    catalog.write(str(eventID) + delim + str(current_time) + delim + str(write_filter) + delim +
                   str(stations) + "\n")
     catalog.close()
 
