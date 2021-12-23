@@ -267,15 +267,74 @@ class catalog(object):
         path += str(year) + "/" + str(year) + "." + str(month) + "_tremor_catalog.txt"
 
         catalog = common.read_csv_to_dict(path, sep="\t")
-        print(len(catalog["TriggerTime"]))
 
-        #TODO: Setja þetta upp í töflu
-
-        return """
+        html = """
         <html>
-            hello world!
-        </html>
+        <head>
+            <style>
+            body {
+                font-family: arial;
+                margin: 0 auto;
+                max-width: 1024px;
+            }
+            table {
+                table-layout: fixed;
+                width: 100%;
+                overflow-wrap: break-word;
+                border-collapse: collapse;
+                border: 2px solid;
+                text-align: center;
+            }
+
+            thead th:nth-child(1) {
+                width: 10%;
+            }
+
+            thead th:nth-child(2) {
+                width: 30%;
+            }
+
+            thead th:nth-child(3) {
+                width: 10%;
+            }
+
+            tbody tr:nth-child(odd) {
+                background-color: #EAEAEA;
+            }
+
+            td, th {
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+
+            </style>
+        </head>
+        <body>
         """
+        html += "<table>"
+        html += "<thead>"
+        html += "<tr>"
+        for k in catalog:
+            html += "<th>" + str(k) + "</th>"
+        html += "</tr>"
+        html += "</thead>"
+
+
+        count = len(catalog[list(catalog.keys())[0]])
+
+        for i in range(0, count):
+            index = count - i - 1
+            html += "<tr>"
+            for k in catalog:
+                html += "<td>" + catalog[k][index] + "</td>"
+            html += "</tr>"
+
+        html += "</table>"
+
+        html += "</body></html>"
+
+        return html
+
 
 #TODO: support querying for an arbritrary date range, not just a specific date
 if(__name__ == "__main__"):
