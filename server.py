@@ -271,6 +271,7 @@ class catalog(object):
         html = """
         <html>
         <head>
+            <meta http-equiv="refresh" content="60">
             <style>
             body {
                 font-family: arial;
