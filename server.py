@@ -315,7 +315,7 @@ class catalog(object):
         html += "<table>"
         html += "<thead>"
         html += "<tr>"
-        for k in catalog:
+        for k in list(catalog.keys()):
             html += "<th>" + str(k) + "</th>"
         html += "</tr>"
         html += "</thead>"
