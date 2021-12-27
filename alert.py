@@ -30,8 +30,8 @@ class ClassAlertInfo:
 
         for name in filters:
             filter_name = str(name)
-            if(filter_name not in alert_on):
-                alert_on[filter_name] = False
+            if(filter_name not in self.alert_on):
+                self.alert_on[filter_name] = False
 
 # Class acts as a global variable
 AlertInfo = ClassAlertInfo()
@@ -367,18 +367,15 @@ def trigger(vote, votes_needed):
     filters = AlertInfo.filter_list
 
     triggered_filters_dict = {}
-    alert_on_dict = {}
 
     for name in filters:
         filter_name = str(name)
 
         if(trig_votes[filter_name] >= votes_needed): # vote is list with vote count corresponding to [filt1, filt2, ...]
             triggered_filters_dict[filter_name] = True # this line sets the first alarm to true!
-            alert_on_dict[filter_name] = True
 
         elif(trig_votes[filter_name] < votes_needed):
             triggered_filters_dict[filter_name] = False
-            alert_on_dict[filter_name] = False
 
     AlertInfo.filters_triggered = triggered_filters_dict
 
@@ -445,7 +442,7 @@ def catalog_new_event(current_time, current_filter, current_info, previous_info,
 
 """ Adds newly triggered stations for event to currently triggered event line in catalog.
 """
-def catalog_edit_event(current_filter, current_stations, alert_on, line_one):
+def catalog_edit_event(current_filter, current_stations, alert_on, line_one, delim):
 
     time = AlertInfo.current_eventID[current_filter][1]  # if filt already triggered, tries reading event id & starttime
     eventID = AlertInfo.current_eventID[current_filter][0]
@@ -466,9 +463,9 @@ def catalog_edit_event(current_filter, current_stations, alert_on, line_one):
     rewrite_lines = [line_one]
 
     for line in lines:
-
         if(int(line.split()[0]) == int(eventID)):  # checks for line with previous eventID
-            previous_stations = line.split()[3]
+            split_line = line.split(delim)
+            previous_stations = split_line[3]
             previous_stations = previous_stations.split(",")
 
             for station in current_stations:
@@ -482,7 +479,8 @@ def catalog_edit_event(current_filter, current_stations, alert_on, line_one):
             for character in characters_to_remove:
                 stations = stations.replace(character, "")
 
-            line = str(line[0:58]) + str(stations) + "\n"
+            #line = str(line[0:58]) + str(stations) + "\n" please don't do this
+            line = split_line[0] + delim + split_line[1] + delim + split_line[2] + delim + str(stations) + "\n"
 
         rewrite_lines.append(line)
     catalog.close()
@@ -554,7 +552,7 @@ def write_catalog(time, filters, minimum_event_gap):
 
             elif(alert_status[filter_name] == True):
                 # read most recent event ID for this filter and check if new stations must be added to this event
-                catalog_edit_event(filter_name, stations, alert_status, first_line)
+                catalog_edit_event(filter_name, stations, alert_status, first_line, delim)
                 audio[filter_name] = False
 
         elif(triggered_filters[filter_name] == False):
