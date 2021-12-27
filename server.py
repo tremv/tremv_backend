@@ -267,6 +267,7 @@ class catalog(object):
         path += str(year) + "/" + str(year) + "." + str(month) + "_tremor_catalog.txt"
 
         catalog = common.read_csv_to_dict(path, sep="\t")
+        catalog_header = ["EventID", "TriggerTime", "Filter", "Stations"]
 
         html = """
         <html>
@@ -315,8 +316,8 @@ class catalog(object):
         html += "<table>"
         html += "<thead>"
         html += "<tr>"
-        for k in list(catalog.keys()):
-            html += "<th>" + str(k) + "</th>"
+        for k in catalog_header:
+            html += "<th>" + k + "</th>"
         html += "</tr>"
         html += "</thead>"
 
