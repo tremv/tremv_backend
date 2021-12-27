@@ -272,7 +272,6 @@ class catalog(object):
         html = """
         <html>
         <head>
-            <meta http-equiv="refresh" content="60">
             <style>
             body {
                 font-family: arial;
@@ -289,15 +288,15 @@ class catalog(object):
             }
 
             thead th:nth-child(1) {
-                width: 10%;
+                width: 6%;
             }
 
             thead th:nth-child(2) {
-                width: 30%;
+                width: 24%;
             }
 
             thead th:nth-child(3) {
-                width: 10%;
+                width: 8%;
             }
 
             tbody tr:nth-child(odd) {
@@ -305,11 +304,26 @@ class catalog(object):
             }
 
             td, th {
-                padding-top: 10px;
-                padding-bottom: 10px;
+                padding: 10px;
             }
 
             </style>
+            <script type="text/javascript">
+            function createReloadTimer(sec) {
+                return setInterval(function() {window.location.reload(true)}, 1000*sec);
+            }
+
+            let reload_timer = null;
+            if(window.location.pathname === "/catalog" || window.location.pathname === "/catalog/") {
+                let reload_timer = createReloadTimer(60);
+
+                document.onscroll = function() {
+                    clearInterval(reload_timer);
+                    reload_timer = createReloadTimer(60);
+                    console.log("timer reset");
+                }
+            }
+            </script>
         </head>
         <body>
         """
