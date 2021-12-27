@@ -327,7 +327,7 @@ class catalog(object):
         for i in range(0, count):
             index = count - i - 1
             html += "<tr>"
-            for k in catalog:
+            for k in catalog_header:
                 html += "<td>" + catalog[k][index] + "</td>"
             html += "</tr>"
 
