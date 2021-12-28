@@ -463,8 +463,8 @@ def catalog_edit_event(current_filter, current_stations, alert_on, line_one, del
     rewrite_lines = [line_one]
 
     for line in lines:
-        if(int(line.split()[0]) == int(eventID)):  # checks for line with previous eventID
-            split_line = line.split(delim)
+        split_line = line.split(delim)
+        if(int(split_line[0]) == int(eventID)):  # checks for line with previous eventID
             previous_stations = split_line[3]
             previous_stations = previous_stations.split(",")
 
