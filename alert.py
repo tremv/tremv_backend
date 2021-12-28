@@ -465,7 +465,7 @@ def catalog_edit_event(current_filter, current_stations, alert_on, line_one, del
     for line in lines:
         split_line = line.split(delim)
         if(int(split_line[0]) == int(eventID)):  # checks for line with previous eventID
-            previous_stations = split_line[3]
+            previous_stations = split_line[3].rstrip()
             previous_stations = previous_stations.split(",")
 
             for station in current_stations:
