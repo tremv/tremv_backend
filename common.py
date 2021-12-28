@@ -37,43 +37,6 @@ class config:
             self.stamp = stamp
 
 """
-Generic function to read files with delimiter seperated values to a dictionary  
-"""
-def read_csv_to_dict(filename, sep=","):
-    result = {}
-
-    with open(filename, "r") as f:
-        header = f.readline().rstrip().split(sep)
-        lines = f.readlines()
-
-        for fieldname in header:
-            result[fieldname] = []
-
-        field_index = 0
-        final_entry = ""
-
-        for line in lines:
-            for entry in line.split(sep):
-                fieldname = header[field_index]
-                final_entry += entry.rstrip()
-                
-                if(entry[-1] != "\n"):
-                    result[fieldname].append(final_entry.rstrip())
-                    field_index += 1
-                    final_entry = ""
-                else:
-                    if(field_index == len(header)-1):
-                        field_index = 0
-                        result[fieldname].append(final_entry.rstrip())
-                        final_entry = ""
-                    else:
-                        #somebody inserted a newline in the middle of an entry :(
-                        final_entry += " "
-
-    return result
-
-
-"""
 input: 
 data: obspy Stream
 inv: obspy Inventory

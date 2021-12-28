@@ -3,6 +3,7 @@
 import cherrypy
 import os
 import sys
+import csv
 import math
 import datetime
 import common
@@ -266,90 +267,92 @@ class catalog(object):
 
         path += str(year) + "/" + str(year) + "." + str(month) + "_tremor_catalog.txt"
 
-        catalog = common.read_csv_to_dict(path, sep="\t")
-        catalog_header = ["EventID", "TriggerTime", "Filter", "Stations"]
+        with open(path) as f:
+            catalog = csv.DictReader(f, delimiter="\t")
 
-        html = """
-        <html>
-        <head>
-            <style>
-            body {
-                font-family: arial;
-                margin: 0 auto;
-                max-width: 1024px;
-            }
-            table {
-                table-layout: fixed;
-                width: 100%;
-                overflow-wrap: break-word;
-                border-collapse: collapse;
-                border: 2px solid;
-                text-align: center;
-            }
-
-            thead th:nth-child(1) {
-                width: 6%;
-            }
-
-            thead th:nth-child(2) {
-                width: 24%;
-            }
-
-            thead th:nth-child(3) {
-                width: 8%;
-            }
-
-            tbody tr:nth-child(odd) {
-                background-color: #EAEAEA;
-            }
-
-            td, th {
-                padding: 10px;
-            }
-
-            </style>
-            <script type="text/javascript">
-            function createReloadTimer(sec) {
-                return setInterval(function() {window.location.reload(true)}, 1000*sec);
-            }
-
-            let reload_timer = null;
-            if(window.location.pathname === "/catalog" || window.location.pathname === "/catalog/") {
-                let reload_timer = createReloadTimer(60);
-
-                document.onscroll = function() {
-                    clearInterval(reload_timer);
-                    reload_timer = createReloadTimer(60);
-                    console.log("timer reset");
+            html = """
+            <html>
+            <head>
+                <style>
+                body {
+                    font-family: arial;
+                    margin: 0 auto;
+                    max-width: 1024px;
                 }
-            }
-            </script>
-        </head>
-        <body>
-        """
-        html += "<table>"
-        html += "<thead>"
-        html += "<tr>"
-        for k in catalog_header:
-            html += "<th>" + k + "</th>"
-        html += "</tr>"
-        html += "</thead>"
+                table {
+                    table-layout: fixed;
+                    width: 100%;
+                    overflow-wrap: break-word;
+                    border-collapse: collapse;
+                    border: 2px solid;
+                    text-align: center;
+                }
 
+                thead th:nth-child(1) {
+                    width: 6%;
+                }
 
-        count = len(catalog[list(catalog.keys())[0]])
+                thead th:nth-child(2) {
+                    width: 24%;
+                }
 
-        for i in range(0, count):
-            index = count - i - 1
+                thead th:nth-child(3) {
+                    width: 8%;
+                }
+
+                tbody tr:nth-child(odd) {
+                    background-color: #EAEAEA;
+                }
+
+                td, th {
+                    padding: 10px;
+                }
+
+                </style>
+                <script type="text/javascript">
+                function createReloadTimer(sec) {
+                    return setInterval(function() {window.location.reload(true)}, 1000*sec);
+                }
+
+                let reload_timer = null;
+                if(window.location.pathname === "/catalog" || window.location.pathname === "/catalog/") {
+                    let reload_timer = createReloadTimer(60);
+
+                    document.onscroll = function() {
+                        clearInterval(reload_timer);
+                        reload_timer = createReloadTimer(60);
+                        console.log("timer reset");
+                    }
+                }
+                </script>
+            </head>
+            <body>
+            """
+            html += "<table>"
+            html += "<thead>"
             html += "<tr>"
-            for k in catalog_header:
-                html += "<td>" + catalog[k][index] + "</td>"
+            for k in catalog.fieldnames:
+                html += "<th>" + k + "</th>"
             html += "</tr>"
+            html += "</thead>"
 
-        html += "</table>"
+            lines = []
 
-        html += "</body></html>"
+            for l in catalog:
+                lines.append(l)
 
-        return html
+            for i in range(0, len(lines)):
+                index = len(lines) - i - 1
+                html += "<tr>"
+                for k in catalog.fieldnames:
+                    html += "<td>" + lines[index][k] + "</td>"
+                html += "</tr>"
+
+            html += "</table>"
+
+            html += "</body></html>"
+
+            return html
 
 
 #TODO: support querying for an arbritrary date range, not just a specific date
