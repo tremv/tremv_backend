@@ -6,44 +6,53 @@ import sys
 import csv
 import math
 import datetime
+import time
 import common
+import threading
 
+import schedule
 import obspy
 from obspy.clients.fdsn import Client as fdsnClient
 from obspy import UTCDateTime
 
+"""
+TODO:
+    *   api fyrir cataloginn
+"""
+
 class api(object):
     def __init__(self):
-        self.standard_filters = [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]]
-        self.config = common.config("config.json")#TODO: environment variable
+        self.config = common.config("config.json")
         self.fdsn = fdsnClient(self.config["fdsn_address"])
+        self.cached_station_metadata = {}
+        self.exit = False
 
-        #TODO: er einhver þörf fyrir að lesa inventory hér???
-        """
-        self.response_inventory = None
+        self.cacheStations()
 
-        #TODO: maybe we should just wait here for the logger to get the inv file???
-        #we just need to do this once so we can get response info for old data
-        print("Getting response_inventory file...")
-        if(os.path.exists(self.config["response_filename"])):
-            self.response_inventory = obspy.read_inventory(self.config["response_filename"])
-        else:
-            inv = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")
-            inv.write(self.config["response_filename"], format="STATIONXML")
-            self.response_inventory = inv
-        """
+        schedule_thread = threading.Thread(target=self.scheduled_tasks)
+        schedule_thread.name = "API_SCHEDULE_THREAD"
+        schedule_thread.start()
 
-    def jsonResult(self, filters):
-        result = {}
-        result["timestamps"] = []
-        result["station_names"] = []
-        result["data"] = [{} for x in filters]
+    def scheduled_tasks(self):
+        scheduler = schedule.Scheduler()
+        scheduler.every(10).minutes.do(self.cacheStations)
 
-        for i in range(0, len(filters)):
-            result["data"][i]["filter"] = filters[i]
-            result["data"][i]["stations"] = {}
+        while(True):
+            if(self.exit):
+                sys.exit()
+            scheduler.run_pending()
+            time.sleep(1)
 
-        return result
+    def stop_handler(self):
+        self.exit = True
+
+    def dataResponse(self, filters):
+        result_array = []
+
+        for f in filters:
+            result_array.append({"stations": {}, "filter": str(f[0]) + " - " + str(f[1])})
+
+        return result_array
     
     def getNetworkStations(self, date_start, date_end):
         network_inv = self.fdsn.get_stations(network=self.config["network"], station="*", starttime=date_start, endtime=date_end)
@@ -57,12 +66,22 @@ class api(object):
 
         return result
 
+    def cacheStations(self):
+        self.cached_station_metadata = self.getNetworkStations(datetime.datetime.today(), datetime.datetime.today())
 
-    #TODO: if no range is provided, just get the latest stations and return those
+    def sortedStationNames(self):
+        return sorted(list(self.cached_station_metadata.keys()))
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def station_metadata(self):
+        return self.cached_station_metadata
+
+    #TODO: HTTP error ef bilið er ekki viðeigandi
     @cherrypy.expose
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
-    def available_stations(self):
+    def stations_in_range(self):
         self.config.reload()
 
         query = cherrypy.request.json
@@ -72,6 +91,25 @@ class api(object):
 
         return self.getNetworkStations(date_start, date_end)
 
+    """
+    returns list of available stations and filters
+    """
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def current_configuration(self):
+        self.config.reload()
+        return {"stations": self.sortedStationNames(), "filters": self.config["filters"]}
+    
+    #TODO:  þegar við erum ekki lengur að lesa úr csv skrá væri kannski hægt að gera eitthvað betra en að lesa
+    #       alltaf skrána sem geymir öll gögnin bara til að ná í nýjustu mín?
+    """
+    Það sem plot forritið gerir er u.þ.b þetta: ná í metadata(var held ég filter og listi af stöðvum sem eru í boði)
+
+    Síðan nær það í síðustu 24 tíma með range request
+
+    Eftir það bíður forritið eftir því að maður fylli út þær stöðvar sem maður vill og ýti á form submit takkan og þá
+    fer það í fyrirspurnar lykkju sem sækir nýjustu gagnapunktana á mín fresti
+    """
 
     """ Reads the newest tremvlogs based on provided filters, and returns the latest
         values for each station that was asked for.
@@ -80,18 +118,23 @@ class api(object):
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
     def latest(self):
-        result = []
-        query = cherrypy.request.json
-
         self.config.reload()
 
-        station_names = self.config["station_names"]
+        available_stations = self.sortedStationNames()
+        stations = available_stations
         filters = self.config["filters"]
+        query = cherrypy.request.json
 
-        if("station_names" in query):
-            if(len(query["station_names"]) > 0):
-                station_names = query["station_names"]
+        if("stations" in query):
+            if(len(query["stations"]) > 0):
+                stations = query["stations"]
 
+                print(stations)
+                for s in stations:
+                    if(s not in available_stations):
+                        raise cherrypy.HTTPError(406)#Not Acceptable
+
+        #TODO: error fyrir filter ef hann er ekki til
         if("filters" in query):
             if(len(query["filters"]) > 0):
                 filters = query["filters"]
@@ -100,31 +143,28 @@ class api(object):
         if("do_log_transform" in query):
             do_log_transform = query["do_log_transform"]
 
-        result = self.jsonResult(filters)
+        result = self.dataResponse(filters)
 
-        #NOTE: need to do this because javascript interprets 1.0 from the metadata response as an integer
+        #NOTE: This is necessary because javascript interprets 1.0 an integer(client asks for available filters, )
         for i in range(0, len(filters)):
             filters[i][0] = float(filters[i][0])
             filters[i][1] = float(filters[i][1])
 
-        #NOTE: Reading the entire file in for now. Prehaps this can be made more efficient via seeking in the file or something...
-        date_now = datetime.datetime.now()
-        #@Robustness:   if the request comes in at some minute timeframe and the data point is not ready
-        #               (that is if we count the lines in the file and they are == the (minute of request - 1)),
-        #               wait until it is ready and then send it
+        #This is so the program doesn't skip the last minute of the day when datetime.datetime.now() would report the next day
+        most_recent_timestamp = datetime.datetime.now() - datetime.timedelta(minutes=1)
 
-        #what minute should this be? might be off by one if not careful
-        date = datetime.datetime(date_now.year, date_now.month, date_now.day,)
+        date = datetime.datetime(most_recent_timestamp.year, most_recent_timestamp.month, most_recent_timestamp.day)
         folder_path = common.logger_output_path(date)
 
+        #TODO: print out the requested minute(the timestamp in the file...)
         for i in range(0, len(filters)):
             f = filters[i]
             if(f in self.config["filters"]):
-                tremvlog_filename = common.generate_tremvlog_filename(date, f)
+                tremvlog_filename = common.generate_tremvlog_filename(date, f, "z")
                 path = folder_path + tremvlog_filename
                 rsam_data = common.read_tremvlog_file(path)
 
-                for name in station_names:
+                for name in stations:
                     latest_value = 0.0
                     if(name in rsam_data):
                         latest_value = rsam_data[name][-1]
@@ -133,7 +173,7 @@ class api(object):
                             if(latest_value > 0.0):
                                 latest_value = math.log(latest_value)*1000
 
-                    result["data"][i]["stations"][name] = latest_value
+                    result[i]["stations"][name] = latest_value
 
         return(result)
 
@@ -145,10 +185,12 @@ class api(object):
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
     def range(self):
-        query = cherrypy.request.json
         self.config.reload()
-        filters = self.config["filters"]
 
+        filters = self.config["filters"]
+        query = cherrypy.request.json
+
+        #TODO: Error ef filter er ekki til
         if("filters" in query):
             if(len(query["filters"]) > 0):
                 filters = query["filters"]
@@ -157,7 +199,7 @@ class api(object):
         if("do_log_transform" in query):
             do_log_transform = query["do_log_transform"]
 
-        result = self.jsonResult(filters)
+        result = self.dataResponse(filters)
 
         #NOTE: need to do this because javascript interprets 1.0 from the metadata response as an integer
         for i in range(0, len(filters)):
@@ -170,6 +212,14 @@ class api(object):
         date_end = datetime.datetime(query["rangeend"]["year"], query["rangeend"]["month"], query["rangeend"]["day"])
 
         available_stations = self.getNetworkStations(date_start, date_end)
+        stations = available_stations
+
+        if("stations" in query):
+            if(len(query["stations"]) > 0):
+                stations = query["stations"]
+                for s in stations:
+                    if(s not in available_stations):
+                        raise cherrypy.HTTPError(406)#Not Acceptable
 
         #NOTE: for some reason "hour" and "minute" is a string?
         query_minute_start = int(query["rangestart"]["hour"]) * 60 + int(query["rangestart"]["minute"])
@@ -196,13 +246,6 @@ class api(object):
                 file_minute_start = query_minute_start
             elif(i == range_in_days-1):#end
                 file_minute_end = query_minute_end+1#NOTE: +1 because it is up to and including the minute
-            
-            date_minute_increment = date + datetime.timedelta(minutes=file_minute_start)
-
-            print("start: " + str(file_minute_start) + ", end: " + str(file_minute_end))
-            for j in range(file_minute_start, file_minute_end):
-                result["timestamps"].append(date_minute_increment.isoformat())
-                date_minute_increment = date_minute_increment + datetime.timedelta(minutes=1)
 
             #use minutestart when we are reading the first file, use minuteend when we are reading the last file
             for j in range(0, len(filters)):
@@ -210,7 +253,7 @@ class api(object):
 
                 if(f in self.config["filters"]):
                     folder_path = common.logger_output_path(date)
-                    filename = folder_path + common.generate_tremvlog_filename(date, f)
+                    filename = folder_path + common.generate_tremvlog_filename(date, f, "z")
                     file_read = False
 
                     if(os.path.exists(filename)):
@@ -224,7 +267,7 @@ class api(object):
                             file_read = True
                             rsam_data = common.read_tremvlog_file(filename)
                             if(do_log_transform):
-                                for name in station_names:
+                                for name in stations:
                                     if(name in rsam_data):
                                         for k in range(0, len(rsam_data[name])):
                                             if(rsam_data[name][k] > 0.0):
@@ -235,24 +278,17 @@ class api(object):
 
                     for name in list(available_stations.keys()):
                         if(name in rsam_data):
-                            if(name not in result["station_names"]):
-                                result["station_names"].append(name)
-
-                            if(name not in result["data"][j]["stations"]):
-                                result["data"][j]["stations"][name] = []
+                            if(name not in result[j]["stations"]):
+                                result[j]["stations"][name] = []
 
                             range_end = min(file_minute_end, len(rsam_data[name]))
 
                             for k in range(file_minute_start, range_end):
-                                result["data"][j]["stations"][name].append(rsam_data[name][k])
+                                result[j]["stations"][name].append(rsam_data[name][k])
 
         return(result)
 
-
-class frontend(object):
-    def __init__(self):
-        pass
-
+#TODO: templating?
 class catalog(object):
     @cherrypy.expose
     def default(self, *args):
@@ -261,6 +297,7 @@ class catalog(object):
         year = date.year
         month = date.month
 
+        #You can append a subpath to the url with /year/month if you want to browse for a specific catalog(plus it doesn't reload)
         if(len(args) > 0):
             year = int(args[0])
             month = int(args[1])
@@ -308,6 +345,11 @@ class catalog(object):
                     padding: 10px;
                 }
 
+                new_event {
+                    background-color: #FFC8C8 !important;
+                }
+
+
                 </style>
                 <script type="text/javascript">
                 function createReloadTimer(sec) {
@@ -343,7 +385,14 @@ class catalog(object):
 
             for i in range(0, len(lines)):
                 index = len(lines) - i - 1
-                html += "<tr>"
+                timestamp = common.parse_isoformat_to_datetime(lines[index]["TriggerTime"])
+                delta = datetime.datetime.now() - timestamp
+
+                if(int(delta.total_seconds()) // 60 <= 10):
+                    html += "<tr class='new_event'>"
+                else:
+                    html += "<tr>"
+
                 for k in catalog.fieldnames:
                     html += "<td>" + lines[index][k] + "</td>"
                 html += "</tr>"
@@ -354,19 +403,26 @@ class catalog(object):
 
             return html
 
+class frontend(object):
+    @cherrypy.expose
+    def default(self, *args):
+        config = cherrypy.request.app.config
+        root_dir = config["/"]["tools.staticdir.root"]
+        filename = config["/"]["tools.staticdir.index"]
+        return cherrypy.lib.static.serve_file(open(os.path.join(root_dir, filename)))
 
-#TODO: support querying for an arbritrary date range, not just a specific date
 if(__name__ == "__main__"):
-    """
-    if(len(sys.argv) == 1):
-        print("Server port argument is required.")
-        sys.exit()
-    """
+    cherrypy.config.update({
+            "server.socket_host": "0.0.0.0",
+            "log.error_file": "server_errors.log"
+        })
 
-    cherrypy.server.socket_host = "0.0.0.0"
-    #cherrypy.server.socket_port = int(sys.argv[1])
-    cherrypy.tree.mount(api(), "/api")
+    api_object = api()
+    cherrypy.engine.subscribe("stop", api_object.stop_handler)
+
+    cherrypy.tree.mount(api_object, "/api")
     cherrypy.tree.mount(catalog(), "/catalog")
+    cherrypy.tree.mount(frontend(), "/plot", config="plot.config")
 
     if hasattr(cherrypy.engine, 'block'):
         # 3.1 syntax
