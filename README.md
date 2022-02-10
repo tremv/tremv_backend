@@ -4,27 +4,31 @@ Tremv Logger generates log files each day, reporting seismic activity averaged o
 Tremv Server distributes this data in json format via HTTP, based on requests to it.
 
 # Setup
-tremv_logger.py requires ObsPy and tremv_server.py requires CherryPy. These packages are available via `pip`.
+logger.py requires ObsPy and server.py requires CherryPy. These packages are available via `pip`.
 
-tremv_logger.py:
+logger.py:
 ```
 pip3 install obspy
 ```
-tremv_server.py:
+server.py:
 ```
 pip3 install cherrypy
 ``` 
 
-Before either program is started, a `tremv_config.json` file must be present. 
+Before either program is started, a `config.json` file must be present. 
 
 Example:
 ```
 {
 	"server": "rtserve.iris.washington.edu",
 	"port": 18000,
-	"network": "YN",
+	"network": "",
+	"station_wildcard": "???",
+	"location_wildcard": "??",
+	"channels": "HHZ",
 	"filters": [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]],
-	"station_names": []
+	"station_blacklist": [],
+	"alert_on": "True"
 }
 ```
 

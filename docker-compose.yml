@@ -1,0 +1,21 @@
+services:
+    logger:
+        restart: always
+        build:
+            context: .
+            dockerfile: ./docker/logger/Dockerfile
+        volumes:
+        - ./logger_output:/logger_output
+        - ./tremor_catalog:/tremor_catalog
+    server:
+        restart: always
+        build:
+            context: .
+            dockerfile: ./docker/server/Dockerfile
+        volumes:
+        - ./logger_output:/logger_output
+        - ./tremor_catalog:/tremor_catalog
+        - ./tremv_plot:/tremv_plot
+        ports:
+        - "80:8080"
+        
