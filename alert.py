@@ -72,7 +72,7 @@ def define_data_range(windows, time):
     Dictionaries span the time of windows (in min) defined in the alert_config.json configuration file.
     Returns dictionaries in relevant time range for each filter.
 """
-def read_data(filters, data_range, delimeter, station_channel):
+def read_data(filters, data_range, station_channel):
 
     data_dicts = {}
 
@@ -93,7 +93,7 @@ def read_data(filters, data_range, delimeter, station_channel):
 
             if(os.path.exists(file_path)):
                 if(len(data_range) == 1): # if only one day for data
-                    all_data = common.read_tremvlog_file(file_path, delimeter)
+                    all_data = common.read_tremvlog_file(file_path)
                     data = {}
 
                     for name in all_data:
@@ -101,10 +101,10 @@ def read_data(filters, data_range, delimeter, station_channel):
 
                 else: # if two days for data
                     if(j == 0):
-                        timestamps1 = common.read_tremvlog_timestamps(file_path, delimeter) # reads prev day file timestamps
-                        station_names1 = common.read_tremvlog_stations(file_path, delimeter) # reads prev day file stations
+                        timestamps1 = common.read_tremvlog_timestamps(file_path) # reads prev day file timestamps
+                        station_names1 = common.read_tremvlog_stations(file_path) # reads prev day file stations
                         missing_min = 1440 - len(timestamps1) # notes how many mins of data are missing from first file
-                        data1 = common.read_tremvlog_file(file_path, delimeter)
+                        data1 = common.read_tremvlog_file(file_path)
 
                         # Assuming that the file has all timestamps from start of day until a single stopping minute...
                         for k in range(0,missing_min):
@@ -112,11 +112,11 @@ def read_data(filters, data_range, delimeter, station_channel):
                                 data1[name].append(0.0)
 
                     if(j > 0): # if averaging window/s span two days
-                        timestamps2 = common.read_tremvlog_timestamps(file_path, delimeter) # reads prev day file timestamps
-                        station_names2 = common.read_tremvlog_stations(file_path, delimeter)
+                        timestamps2 = common.read_tremvlog_timestamps(file_path) # reads prev day file timestamps
+                        station_names2 = common.read_tremvlog_stations(file_path)
 
                         # only reads first x minutes of second (current day) file (up to current starttime)
-                        all_data2 = common.read_tremvlog_file(file_path, delimeter)
+                        all_data2 = common.read_tremvlog_file(file_path)
                         data2 = {}
 
                         for name in all_data2:
@@ -539,7 +539,7 @@ def write_catalog(time, filters, minimum_event_gap):
                         alert_status[filter_name] = True
                         event_info[filter_name] = prev_info[filter_name]
                         AlertInfo.current_eventID = event_info
-                        catalog_edit_event(filter_name, stations, alert_status, first_line)
+                        catalog_edit_event(filter_name, stations, alert_status, first_line, delim)
                         audio[filter_name] = False
                     else:
                         # returns event_info for AlertInfo.current_event_id
@@ -605,30 +605,26 @@ def silence_muted_filters(muted_filt, filters):
 """ Determines if an audio alarm must be triggered for this minute. Returns a boolian True or False for audio alarm.
     Only triggers once per event, when a filter is first triggered. Will not ring alarm if "silence_alarm" = "True".
 """
-def ring_audio_alarm(filters, silence, max_audio, time):
+def ring_audio_alarm(filters, max_audio, time):
+    ring_alarm = False
+    audio_alarm = AlertInfo.audio_alarm
 
-    if(silence == "True"):
-        ring_alarm = False # will not ring if module has been silenced
-    else:
-        ring_alarm = False
-        audio_alarm = AlertInfo.audio_alarm
+    for name in filters:
+        filter_name = str(name)
+        if(audio_alarm[filter_name] == True):
+            ring_alarm = True
+            AlertInfo.alarm_per_hr += 1
 
-        for name in filters:
-            filter_name = str(name)
-            if(audio_alarm[filter_name] == True):
-                ring_alarm = True
-                AlertInfo.alarm_per_hr += 1
+            # Limits number of audio alarms that ring per hour
+            if(time >= AlertInfo.target_hr or AlertInfo.target_hr == ""):
 
-                # Limits number of audio alarms that ring per hour
-                if(time >= AlertInfo.target_hr or AlertInfo.target_hr == ""):
+                AlertInfo.target_hr = UTCDateTime(str(time)[0:13]) + 3600
+                AlertInfo.alarm_per_hr = 0
 
-                    AlertInfo.target_hr = UTCDateTime(str(time)[0:13]) + 3600
-                    AlertInfo.alarm_per_hr = 0
+            if(AlertInfo.alarm_per_hr > max_audio):
+                ring_alarm = False
 
-                if(AlertInfo.alarm_per_hr > max_audio):
-                    ring_alarm = False
-
-                break
+            break
 
     return(ring_alarm)
 
@@ -638,8 +634,6 @@ def main(starttime, logger_filters, channel, alert_hook=None):
 
     AlertInfo.filter_list = logger_filters # import filters in data structure from tremv_logger
 
-    delim = "," # Maybe configure this better elsewhere. In config file? Or hardcode and import into alert from logger.
-
     # window length in min (because cannot be smaller than 1 minute) -- config file in min, this var in sec
     sta_len = alert_config["sta_length"]*60-60
     # * 60 to convert to sec, minus 60 because already includes data from current minute
@@ -648,7 +642,7 @@ def main(starttime, logger_filters, channel, alert_hook=None):
     # read data, split data to sta and lta windows
     time_windows = define_windows(starttime, sta_len, lta_len)
     time_range = define_data_range(time_windows, starttime)
-    data_dictionary = read_data(logger_filters, time_range, delim, channel)
+    data_dictionary = read_data(logger_filters, time_range, channel)
     updated_data_dict = remove_stat(logger_filters, data_dictionary, alert_config["remove_stations"])
     split_data(updated_data_dict, sta_len, lta_len, alert_config["ramp_min_avg"], alert_config["ramp_intervals"],
                logger_filters)
@@ -666,9 +660,11 @@ def main(starttime, logger_filters, channel, alert_hook=None):
 
     silence_muted_stations(alert_config["mute_stations"], alert_config["station_votes"], voting, logger_filters)
     silence_muted_filters(alert_config["mute_filters"], logger_filters)
-    run_alert_hook=ring_audio_alarm(logger_filters,alert_config["silence_audio"],alert_config["max_audio_per_hr"],starttime)
 
-    if(run_alert_hook == True):
-        print("Triggering alert hook.")
-        if(alert_hook):
-            alert_hook()
+    if(alert_config["silence_audio"] == "False"):
+        run_alert_hook = ring_audio_alarm(logger_filters, alert_config["max_audio_per_hr"], starttime)
+
+        if(run_alert_hook == True):
+            print("Triggering alert hook.")
+            if(alert_hook):
+                alert_hook()

@@ -9,6 +9,7 @@ import datetime
 import time
 import common
 import threading
+import urllib
 
 import schedule
 import obspy
@@ -16,8 +17,10 @@ from obspy.clients.fdsn import Client as fdsnClient
 from obspy import UTCDateTime
 
 """
-TODO:
-    *   api fyrir cataloginn
+NOTE:
+Between minute t and t+1, the logger finishes processing data for minute t-1 to t, which is then written out as t-1.
+So minute 1440 of the day written between minute 0 and 1 of the next day.
+The only guarantee that is made is that data for minute t-1 is available at minute t+1.
 """
 
 class api(object):
@@ -43,6 +46,7 @@ class api(object):
             scheduler.run_pending()
             time.sleep(1)
 
+    #A function that is passed to cherrypy to properly exit the task thread we run.
     def stop_handler(self):
         self.exit = True
 
@@ -81,13 +85,13 @@ class api(object):
     @cherrypy.expose
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
-    def stations_in_range(self):
+    def stations_in_timerange(self):
         self.config.reload()
 
         query = cherrypy.request.json
 
-        date_start = datetime.datetime(query["rangestart"]["year"], query["rangestart"]["month"], query["rangestart"]["day"])
-        date_end = datetime.datetime(query["rangeend"]["year"], query["rangeend"]["month"], query["rangeend"]["day"])
+        date_start = common.parse_isoformat_to_datetime(query["range_start"])
+        date_end = common.parse_isoformat_to_datetime(query["range_end"])
 
         return self.getNetworkStations(date_start, date_end)
 
@@ -171,7 +175,7 @@ class api(object):
 
                         if(do_log_transform):
                             if(latest_value > 0.0):
-                                latest_value = math.log(latest_value)*1000
+                                latest_value = math.log(latest_value)
 
                     result[i]["stations"][name] = latest_value
 
@@ -208,10 +212,14 @@ class api(object):
 
         #TODO: make sure these are valid values...
         #keep the dates without minute info, and just keep the minutes as integers, which is easier
-        date_start = datetime.datetime(query["rangestart"]["year"], query["rangestart"]["month"], query["rangestart"]["day"])
-        date_end = datetime.datetime(query["rangeend"]["year"], query["rangeend"]["month"], query["rangeend"]["day"])
+        date_start = common.parse_isoformat_to_datetime(query["range_start"])
+        date_end = common.parse_isoformat_to_datetime(query["range_end"])
 
-        available_stations = self.getNetworkStations(date_start, date_end)
+        print("client is asking for: ")
+        print(date_start.isoformat())
+        print(date_end.isoformat())
+
+        available_stations = sorted(list(self.getNetworkStations(date_start, date_end).keys()))
         stations = available_stations
 
         if("stations" in query):
@@ -221,9 +229,8 @@ class api(object):
                     if(s not in available_stations):
                         raise cherrypy.HTTPError(406)#Not Acceptable
 
-        #NOTE: for some reason "hour" and "minute" is a string?
-        query_minute_start = int(query["rangestart"]["hour"]) * 60 + int(query["rangestart"]["minute"])
-        query_minute_end = int(query["rangeend"]["hour"]) * 60 + int(query["rangeend"]["minute"])
+        query_minute_start = date_start.hour * 60 + date_start.minute
+        query_minute_end = date_end.hour * 60 + date_end.minute
 
         if(date_start > date_end):
             return(result)
@@ -232,55 +239,45 @@ class api(object):
             if(query_minute_start > query_minute_end):
                 return(result)
 
-        range_in_days = 1 + int((date_end - date_start) / datetime.timedelta(days=1))
+        range_in_days = (date_end - date_start).days + 1
 
         for i in range(0, range_in_days):
-            date = date_start + datetime.timedelta(days=i)
+            date = datetime.datetime(date_start.year, date_start.month, date_start.day) + datetime.timedelta(days=i)
             file_minute_start = 0
             file_minute_end = 60*24
 
-            if(range_in_days == 1):
+            #we need to start reading from query_minute_start from the first file and query_minute_end on the last file
+            if(i == 0):#start
                 file_minute_start = query_minute_start
-                file_minute_end = query_minute_end+1#NOTE: +1 because it is up to and including the minute
-            elif(i == 0):#start
-                file_minute_start = query_minute_start
-            elif(i == range_in_days-1):#end
-                file_minute_end = query_minute_end+1#NOTE: +1 because it is up to and including the minute
 
-            #use minutestart when we are reading the first file, use minuteend when we are reading the last file
+            if(i == range_in_days-1):#end
+                file_minute_end = query_minute_end
+
             for j in range(0, len(filters)):
                 f = filters[j]
 
                 if(f in self.config["filters"]):
                     folder_path = common.logger_output_path(date)
                     filename = folder_path + common.generate_tremvlog_filename(date, f, "z")
-                    file_read = False
+                    rsam_data = {}
 
                     if(os.path.exists(filename)):
-                        file_timestamp = os.stat(filename).st_mtime
+                        rsam_data = common.read_tremvlog_file(filename)
+                        print(len(rsam_data[list(rsam_data.keys())[0]]))
 
-                        sec_in_day = 60*60*24
-                        midnight_timestamp = int(file_timestamp) // sec_in_day * sec_in_day#integer division with sec in day to get the days since epoch, then multiply back to get the timestamp at midnight
+                    if(do_log_transform):
+                        for name in stations:
+                            if(name in rsam_data):
+                                for k in range(0, len(rsam_data[name])):
+                                    if(rsam_data[name][k] > 0.0):
+                                        rsam_data[name][k] = math.log(rsam_data[name][k])
 
-                        #if the file wasn't created within 30min from midnight, we default to the tremlogs
-                        if(file_timestamp - midnight_timestamp < 60*30):
-                            file_read = True
-                            rsam_data = common.read_tremvlog_file(filename)
-                            if(do_log_transform):
-                                for name in stations:
-                                    if(name in rsam_data):
-                                        for k in range(0, len(rsam_data[name])):
-                                            if(rsam_data[name][k] > 0.0):
-                                                rsam_data[name][k] = math.log(rsam_data[name][k])*1000
-
-                    if(file_read == False):
-                        print("Could not find requested data.")
-
-                    for name in list(available_stations.keys()):
+                    for name in stations:
                         if(name in rsam_data):
                             if(name not in result[j]["stations"]):
                                 result[j]["stations"][name] = []
 
+                            #TODO: is this needed???
                             range_end = min(file_minute_end, len(rsam_data[name]))
 
                             for k in range(file_minute_start, range_end):
@@ -288,8 +285,66 @@ class api(object):
 
         return(result)
 
+    """
+    Read catalog data within a given time range and returns a json object with the data.
+    """
+    @cherrypy.expose
+    @cherrypy.tools.json_in()
+    @cherrypy.tools.json_out()
+    def catalog_range(self):
+        self.config.reload()
+        query = cherrypy.request.json
+        result = []
+
+        #TODO: make sure these are valid values...
+        #keep the dates without minute info, and just keep the minutes as integers, which is easier
+        sd = common.parse_isoformat_to_datetime(query["range_start"])
+        ed = common.parse_isoformat_to_datetime(query["range_end"])
+
+        year = sd.year
+        month = sd.month
+
+        print(year)
+        print(month)
+
+        while(year != ed.year or month <= ed.month):
+            if(month > 12):
+                month = 1
+                year += 1
+
+            path = "tremor_catalog/" + str(year) + "/" + str(year) + "." + str(month) + "_tremor_catalog.txt"
+
+            if(os.path.exists(path)):
+                with open(path) as catalog_file:
+                    catalog = csv.DictReader(catalog_file, delimiter="\t")
+
+                    for entry in catalog:
+                        timestamp = common.parse_isoformat_to_datetime(entry["TriggerTime"])
+                        if(timestamp > sd and timestamp < ed):
+                            entry["Stations"] = entry["Stations"].split(",")
+                            f0_str, f1_str = entry["Filter"].strip("[]").split(",")
+                            entry["Filter"] = [float(f0_str), float(f1_str)]
+                            result.append(entry)
+
+
+            month += 1
+
+        return result
+
+        """
+        for i in range(0, ed - sd):
+            path += str(year) + "/" + str(year) + "." + str(month) + "_tremor_catalog.txt"
+
+        with open(path) as f:
+            catalog = csv.DictReader(f, delimiter="\t")
+        """
+
+
 #TODO: templating?
 class catalog(object):
+    def __init__(self):
+        self.config = common.config("config.json")
+
     @cherrypy.expose
     def default(self, *args):
         path = "tremor_catalog/"
@@ -304,12 +359,13 @@ class catalog(object):
 
         path += str(year) + "/" + str(year) + "." + str(month) + "_tremor_catalog.txt"
 
-        with open(path) as f:
-            catalog = csv.DictReader(f, delimiter="\t")
+        with open(path) as catalog_file:
+            catalog = csv.DictReader(catalog_file, delimiter="\t")
 
             html = """
             <html>
             <head>
+                <title>Tremor Catalog</title>
                 <style>
                 body {
                     font-family: arial;
@@ -337,6 +393,10 @@ class catalog(object):
                     width: 8%;
                 }
 
+                thead th:nth-child(5) {
+                    width: 4%;
+                }
+
                 tbody tr:nth-child(odd) {
                     background-color: #EAEAEA;
                 }
@@ -345,28 +405,24 @@ class catalog(object):
                     padding: 10px;
                 }
 
-                new_event {
+                .new_event {
                     background-color: #FFC8C8 !important;
                 }
 
+                .plot_button_svg {
+                    display: none;
+                }
+
+                tr:hover .plot_button_svg {
+                    display: inline;
+                }
+
+                a {
+                    color: black;
+                    text-decoration: none;
+                }
 
                 </style>
-                <script type="text/javascript">
-                function createReloadTimer(sec) {
-                    return setInterval(function() {window.location.reload(true)}, 1000*sec);
-                }
-
-                let reload_timer = null;
-                if(window.location.pathname === "/catalog" || window.location.pathname === "/catalog/") {
-                    let reload_timer = createReloadTimer(60);
-
-                    document.onscroll = function() {
-                        clearInterval(reload_timer);
-                        reload_timer = createReloadTimer(60);
-                        console.log("timer reset");
-                    }
-                }
-                </script>
             </head>
             <body>
             """
@@ -375,6 +431,9 @@ class catalog(object):
             html += "<tr>"
             for k in catalog.fieldnames:
                 html += "<th>" + k + "</th>"
+
+            html += "<th></th>"#tómt til að búa til pláss fyrir plot takkann
+
             html += "</tr>"
             html += "</thead>"
 
@@ -395,11 +454,60 @@ class catalog(object):
 
                 for k in catalog.fieldnames:
                     html += "<td>" + lines[index][k] + "</td>"
+
+                html += "<td><a href='" 
+
+                url = "/plot/?"
+                url += "stations=" + urllib.parse.quote(lines[index]["Stations"])
+                date = datetime.date(timestamp.year, timestamp.month, timestamp.day)
+
+                url += "&date=" + date.isoformat()
+
+                f0_str, f1_str = lines[index]["Filter"].strip("[]").split(",")
+                filt = [float(f0_str), float(f1_str)]
+
+                filt_query_state = []
+
+                for f in self.config["filters"]:
+                    if(f[0] == filt[0] and f[1] == filt[1]):
+                        filt_query_state.append("true")
+                    else:
+                        filt_query_state.append("false")
+
+                url += "&filters=" + urllib.parse.quote( ",".join(filt_query_state))
+
+                url += "&sidebar=false"
+                url += "&catalog=true"
+
+                html += url + "' title='Plot'>"
+                html += "<svg class='plot_button_svg' xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' class='bi bi-bar-chart-line-fill' viewBox='0 0 16 16'><path d='M11 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3h1V7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7h1V2z'/></svg>"
+                html += "</a></td>"
                 html += "</tr>"
 
             html += "</table>"
 
-            html += "</body></html>"
+            html += "</body>"
+
+            html += """
+            <script type="text/javascript">
+            function createReloadTimer(sec) {
+                return setInterval(function() {window.location.reload(true)}, 1000*sec);
+            }
+
+            let reload_timer = null;
+            if(window.location.pathname === "/catalog" || window.location.pathname === "/catalog/") {
+                let reload_timer = createReloadTimer(60);
+
+                document.onscroll = function() {
+                    clearInterval(reload_timer);
+                    reload_timer = createReloadTimer(60);
+                    console.log("timer reset");
+                }
+            }
+            </script>
+            """
+
+            html += "</html>"
 
             return html
 
@@ -412,8 +520,13 @@ class frontend(object):
         return cherrypy.lib.static.serve_file(open(os.path.join(root_dir, filename)))
 
 if(__name__ == "__main__"):
+    port = 8080
+    if(len(sys.argv) > 1):
+        port = int(sys.argv[1])
+
     cherrypy.config.update({
             "server.socket_host": "0.0.0.0",
+            "server.socket_port": port,
             "log.error_file": "server_errors.log"
         })
 

@@ -2,6 +2,7 @@
 #Bethany Erin Vanderhoof
 #Þórður Ágúst Karlsson
 
+import errno
 import os
 import sys
 import time
@@ -16,8 +17,14 @@ import threading
 import logging
 
 
-""" Apply lowpass filter to the data and downsample it from 100 points per minute
-    to 20 per minute.
+""" 
+Apply lowpass filter to the data and downsample it from 100 points per minute to 20 per minute.
+
+Parameters:
+    stations: a obspy trace with the stations to pre process.
+
+Returns:
+    trace object which has been filtered, decimated and demeaned.
 """
 def process_station_data(stations):
     result = stations.copy()
@@ -35,54 +42,64 @@ def process_station_data(stations):
     return(result)
 
 
-""" Iterate through each filter, applies it to each trace and adds the filtered
-    trace to a list corresponding to the filter that the iteration is on.
+""" 
+Applies each bandpass filter to each station trace. 
+Each trace is added to a dictionary corresponding to the filter that was applied.
+
+Parameters:
+    traces: Obspy Stream object(list of traces)
+    filters: A list of tuples which describe the bandpass filters to be applied.
+
+Returns:
+    A list of dictionaries where each dictionary corresponds to each filter applied.
+    Each dictionary contains the filtered traces.
 """
 def apply_bandpass_filters(traces, filters):
-    passbands = [{} for i in filters]
+    passbands = []
  
-    for i in range(0, len(filters)):
-        f = filters[i]
+    for f in filters:
+        filtered_stations = {}
  
         for trace in traces:
             t = trace.copy()
             t.filter("bandpass", freqmin=float(f[0]), freqmax=float(f[1]), corners=4, zerophase=True)
-            passbands[i][t.stats["station"]] = t
+            filtered_stations[t.stats["station"]] = t
+
+        passbands.append(filtered_stations)
 
     return(passbands)
 
 
-""" Applies rsam to a single trace.
-    NOTE: This function assumes the given trace is 1 minute worth of data.
 """
-def trace_average(trace):
-    pts_per_minute = int(trace.stats.sampling_rate * 60)
+Takes in a list of dictionaries which contain station data that has been filtered with
+a bandpass filter and averages the values.
 
-    s = 0
-    for n in trace.data:
-        s += abs(n)
+Parameters:
+    per_filter_filtered_stations: List of dictionaries which have been filtered with apply_bandpass_filters.
+    station_names: List of the names of the stations we are working with.
 
-    return(s/pts_per_minute)
-
-
-""" Averages values for a given station over a minute and prepares the averages as
-    an array of dictionaries whose length is equal to the number of filters provided.
-    Each dictionary uses station names as keys and the corresponding average is the value.
+Returns:
+    A list of dictionaries which contain filtered and averaged values.
 """
-def rsam_processing(per_filter_filtered_stations, filters, station_names):
-    result = [{} for i in filters]
+def rsam_processing(per_filter_filtered_stations, station_names):
+    result = []
 
-    for i in range(0, len(filters)):
+    for filtered_stations in per_filter_filtered_stations:
+        rsam_stations = {}
         for name in station_names:
-            filtered_stations = per_filter_filtered_stations[i]
-            rsam_stations_dict = result[i]
-
-            rsam_stations_dict[name] = 0.0
+            rsam_stations[name] = 0.0
 
             if(name in filtered_stations):
                 trace = filtered_stations[name]
-                average = trace_average(trace)
-                rsam_stations_dict[name] = average
+                pts_per_minute = int(trace.stats.sampling_rate * 60)
+
+                s = 0
+                for n in trace.data:
+                    s += abs(n)
+
+                rsam_stations[name] = s / pts_per_minute
+
+        result.append(rsam_stations)
 
     return(result)
 
@@ -101,7 +118,6 @@ def determine_channel(selector):
 """ Creates output files... (one per specified bandpass filter)
 """
 def write_tremvlog_file(rsam_results, filters, station_names, timestamp, channel):
-    delimeter = ","
     path = common.logger_output_path(timestamp)
 
     if (os.path.exists(path) == False):
@@ -115,13 +131,13 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp, channel
         # creates file for current filter and day if nonexistent
         station_names.sort()  # sorts station names alphabetically
         if (file_exists == False):
-            create_tremvlog_file(file_path, delimeter, timestamp, station_names)
+            create_tremvlog_file(file_path, timestamp, station_names)
 
-        station_names_in_file = common.read_tremvlog_stations(file_path, delimeter)
+        station_names_in_file = common.read_tremvlog_stations(file_path)
         station_names_in_file.sort()  # sorts station names alphabetically
-        timestamps = common.read_tremvlog_timestamps(file_path, delimeter)
+        timestamps = common.read_tremvlog_timestamps(file_path)
 
-        stat_diff_data = station_difference(station_names_in_file, station_names, file_path, delimeter, filter_index, filters)
+        stat_diff_data = station_difference(station_names_in_file, station_names, file_path, filter_index, filters)
 
         # If station lists differ, must read the whole file in and re-write it
         if (stat_diff_data != None):
@@ -131,22 +147,21 @@ def write_tremvlog_file(rsam_results, filters, station_names, timestamp, channel
 
             new_station_names.sort()  # sorts station names alphabetically
             station_names_in_file = new_station_names  # updates station list in file with added stations
-            write_tremvlog_stat_differ(new_station_names, filter_index, path, file_path, delimeter, filters, timestamp,
-                                  timestamps, stat_diff_data, channel)
+            write_tremvlog_stat_differ(new_station_names, filter_index, path, file_path, filters, timestamp, timestamps, stat_diff_data, channel)
 
         # "backfills" lines of missing data (as 0.0) if gap between previous and current minute
-        write_tremvlog_zeroes(file_path, delimeter, timestamp)
+        write_tremvlog_zeroes(file_path, timestamp)
 
         # writes current minute of RSAM data
-        write_tremvlog_rsam(file_path, delimeter, timestamp, station_names_in_file, rsam_results, filter_index)
+        write_tremvlog_rsam(file_path, timestamp, station_names_in_file, rsam_results, filter_index)
 
 
 """ If csv file does not exist for current day and filter, creates file. Writes station list as header.
     Also writes missing data as zeroes from start of day to current minute.
 """
-def create_tremvlog_file(filename, delim, t, stations):
+def create_tremvlog_file(filename, t, stations):
     output = open(filename, "w")
-    output.write("TIMESTAMP" + str(delim))
+    output.write("TIMESTAMP" + common.delimiter())
 
     # Writes station names at top of CSV file
     for i in range(0, len(stations)):
@@ -154,27 +169,27 @@ def create_tremvlog_file(filename, delim, t, stations):
         if (i == len(stations) - 1):
             output.write("\n")
         else:
-            output.write(delim)
+            output.write(common.delimiter())
 
     minute_of_day = t.minute + t.hour * 60
 
     # Fill in empty values in the file if it isn't created at midnight.
     for i in range(0, minute_of_day):
-        output.write(str(t - 60 * (minute_of_day - i)) + str(delim))
+        output.write(str(t - 60 * (minute_of_day - i)) + common.delimiter())
 
         for j in range(0, len(stations)):
             output.write(str(0.0))
             if (j == len(stations) - 1):
                 output.write("\n")
             else:
-                output.write(delim)
+                output.write(common.delimiter())
 
     output.close()
 
 
 """ Returns list of lists with added stations and removed stations, comparing station names in config vs. output file.
 """
-def station_difference(file_stats, stats, fp, delim, filt_index, filt):
+def station_difference(file_stats, stats, fp, filt_index, filt):
     station_lists_differ = False
 
     # For added stations: determine if there is difference between config station_names list and output stations
@@ -194,7 +209,7 @@ def station_difference(file_stats, stats, fp, delim, filt_index, filt):
             removed_stats.append(name)
 
     if (station_lists_differ == True):
-        data_in_file = common.read_tremvlog_file(fp, delim)  # AKA "result"
+        data_in_file = common.read_tremvlog_file(fp)  # AKA "result"
         minute_count = len(data_in_file[file_stats[1]])  # At 1 to ignore TIMESTAMP + stat names (first line)
 
         # account for stations that are not present in the file and fill those with zeroes in dictionary
@@ -221,12 +236,12 @@ def station_difference(file_stats, stats, fp, delim, filt_index, filt):
 """ Reads and rewrites station data from file to include new stations. Inputs zeros for removed stations.
     Writes note in log debug file to state which stations added or removed.
 """
-def write_tremvlog_stat_differ(stations, filt_index, p, fp, delim, filt, t, times, data, stat_channel):
+def write_tremvlog_stat_differ(stations, filt_index, p, fp, filt, t, times, data, stat_channel):
     # Writes to an different file so that information isn't lost if the code crashes here
     temp_path = p + "temp" + common.generate_tremvlog_filename(t, filt[filt_index], stat_channel)
     output = open(temp_path, "w")
 
-    output.write("TIMESTAMP" + str(delim))
+    output.write("TIMESTAMP" + common.delimiter())
     stations.sort()  # sorts stations alphabetically for writing
     for i in range(0, len(stations)):
         output.write(stations[i])
@@ -234,10 +249,10 @@ def write_tremvlog_stat_differ(stations, filt_index, p, fp, delim, filt, t, time
         if (i == len(stations) - 1):
             output.write("\n")
         else:
-            output.write(delim)
+            output.write(common.delimiter())
 
     for i in range(0, len(times)):
-        output.write(times[i] + delim)  # adds timestamp at beginning of lines in new file
+        output.write(times[i] + common.delimiter())  # adds timestamp at beginning of lines in new file
 
         for j in range(0, len(stations)):
             name = stations[j]
@@ -246,7 +261,7 @@ def write_tremvlog_stat_differ(stations, filt_index, p, fp, delim, filt, t, time
             if (j == len(stations) - 1):
                 output.write("\n")
             else:
-                output.write(delim)
+                output.write(common.delimiter())
 
     output.close()
 
@@ -259,12 +274,12 @@ def write_tremvlog_stat_differ(stations, filt_index, p, fp, delim, filt, t, time
 """ Reads most recent timestamp of file and compares this to the current minute.
     If there is more than one minute difference, input zeroes for missing data.
 """
-def write_tremvlog_zeroes(filename, delim, time):
+def write_tremvlog_zeroes(filename, time):
     # Read list of specific timestamps for file rewrite with station addition/removal
     file_path = filename  # to import variable into read timestamp function below
 
-    timestamps = common.read_tremvlog_timestamps(file_path, delim)  #### import this timestamps variable
-    station_names_in_file = common.read_tremvlog_stations(file_path, delim)
+    timestamps = common.read_tremvlog_timestamps(file_path)  #### import this timestamps variable
+    station_names_in_file = common.read_tremvlog_stations(file_path)
 
     # do the actual appending of new data...
     output = open(filename, "a")
@@ -284,7 +299,7 @@ def write_tremvlog_zeroes(filename, delim, time):
         minute_delta = current_timestamp_minutes - last_timestamp_minutes
 
         for i in range(1, minute_delta):
-            output.write(str(UTCDateTime((last_timestamp_minutes + i) * 60)) + str(delim))
+            output.write(str(UTCDateTime((last_timestamp_minutes + i) * 60)) + common.delimiter())
 
             for j in range(0, len(station_names_in_file)):
                 output.write(str(0.0))
@@ -292,19 +307,19 @@ def write_tremvlog_zeroes(filename, delim, time):
                 if (j == len(station_names_in_file) - 1):
                     output.write("\n")
                 else:
-                    output.write(delim)
+                    output.write(common.delimiter())
 
         output.close()
 
 
 """ Called by write_tremvlog_file. Writes current minute of RSAM data to csv file.
 """
-def write_tremvlog_rsam(filename, delim, time, stations, rsam, filt_index):
+def write_tremvlog_rsam(filename, time, stations, rsam, filt_index):
     # open output to append new data
     output = open(filename, "a")
 
     # Writes current RSAM data
-    output.write(str(time) + str(delim))
+    output.write(str(time) + common.delimiter())
     for i in range(0, len(stations)):
 
         name = stations[i]
@@ -318,16 +333,9 @@ def write_tremvlog_rsam(filename, delim, time, stations, rsam, filt_index):
         if (i == len(stations) - 1):
             output.write("\n")
         else:
-            output.write(delim)
+            output.write(common.delimiter())
 
     output.close()
-
-#TODO:  git double upstream
-
-#TODO:  there is an unchecked assumption here that each trace in the recieved waveforms includes only one station,
-#       which seems to be true, but we never actually verify it...
-
-#TODO: the name 'network' in the config file is ambiguous
 
 #NOTE: This stuff is needed so we get output from uncaught exceptions in the debug.log file
 def log_uncaught_exception_main(exc_type, exc_value, exc_traceback):
@@ -340,6 +348,11 @@ def log_uncaught_exception_threading(args):
 sys.excepthook = log_uncaught_exception_main
 threading.excepthook = log_uncaught_exception_threading
 
+"""
+Class that encapsulates the state and the main loop of the program.
+The program relies on a FDSN connection for metadata and response information,
+and a seedlink connection for raw data aquisition. Response data is refreshed once a day.
+"""
 class program:
     def __init__(self):
         logging.basicConfig(
@@ -348,12 +361,42 @@ class program:
             handlers=[logging.StreamHandler(), logging.FileHandler("debug.log")]
         )
 
-        self.config = common.config("config.json")
-        self.fdsn = None
+        self.exit = False#used so we can tell the program to exit from a thread
+        self.response_lock = threading.Lock()#Lock for the reading of the response inventory as the aquisition happens on another thread.
         self.response_inventory = None
         self.metadata_inventory = None
-        self.response_lock = threading.Lock()
-        self.exit = False#used so we can tell the program to exit from a thread
+        self.fdsn = None
+        self.config = common.config("config.json")
+
+        if("fdsn_address" not in self.config.config):
+            raise Exception("You need to define the FDSN server address in config.json with \"fdsn_address\".")
+
+        if("seedlink_address" not in self.config.config):
+            raise Exception("You need to define the seedlink address in config.json with \"seedlink_address\".")
+
+        if("seedlink_port" not in self.config.config):
+            raise Exception("You need to define the seedlink port in config.json with \"seedlink_port\".")
+
+        if("network" not in self.config.config):
+            raise Exception("You need to define the SEED network config.json with \"network\".")
+
+        if("response_filename" not in self.config.config):
+            self.config["response_filename"] = ".resp.xml"
+
+        if("metadata_filename" not in self.config.config):
+            self.config["metadata_filename"] = ".meta.xml"
+
+        if("station_wildcard" not in self.config.config):
+            self.config["station_wildcard"] = "???"
+
+        if("location_wildcard" not in self.config.config):
+            self.config["location_wildcard"] = "??"
+
+        if("channels" not in self.config.config):
+            self.config["channels"] = "HHZ"
+
+        if("filters" not in self.config.config):
+            self.config["filters"] = [[0.5, 1.0], [1.0, 2.0], [2.0, 4.0]]
 
         self.fdsn_connect()
 
@@ -363,6 +406,9 @@ class program:
             self.fetch_response_inventory()
 
 
+    """
+    Tries to connect to the FDSN server. Does not abort on failure, since we might have the relevant information cached.
+    """
     def fdsn_connect(self):
         try:
             logging.info("Connecting to fdsn server...")
@@ -372,15 +418,22 @@ class program:
             logging.info(e)
 
 
+    """
+    Tries to read metadata inventory from file. Aborts program on failure.
+    """
     def read_metadata_from_file(self):
         if(os.path.exists(self.config["metadata_filename"])):
             logging.info("Falling back to metadata file.")
             self.metadata_inventory = obspy.read_inventory(self.config["metadata_filename"])
         else:
+            self.exit = True
             logging.error("No metadata file was found. Aborting program.")
             sys.exit(1)
 
 
+    """
+    Tries to read response inventory from file. Aborts program on failure.
+    """
     def read_response_from_file(self):
         if(os.path.exists(self.config["response_filename"])):
             logging.info("Falling back to response file.")
@@ -393,11 +446,14 @@ class program:
             sys.exit(1)
 
 
+    """
+    Tries to get response inventory from the FDSN connection. Reads from a file on failure.
+    """
     def fetch_response_inventory(self):
         logging.info("Fetching response inventory...")
 
         try:
-            inv = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")#TODO station wildcard from config file?
+            inv = self.fdsn.get_stations(network=self.config["network"], station="*", level="response")
             self.response_lock.acquire()
             self.response_inventory = inv
             self.response_lock.release()
@@ -412,13 +468,17 @@ class program:
                 logging.info("Using cached response inventory.")
 
 
-
     def fetch_response_inventory_threaded(self):
         thread = threading.Thread(target=self.fetch_response_inventory)
         thread.name = "response_fetch_thread"
         thread.start()
 
 
+    """
+    The main loop of the program.
+    Gets raw data for stations that are not on the blacklist(if it is present),
+    pre processes and filters it, and then averages the data and writes it to a file.
+    """
     def main(self):
         if(self.exit):
             logging.info("Exiting from response fetch thread(file not found and unable to connect to the server).")
@@ -427,18 +487,14 @@ class program:
         self.config.reload()
         self.fdsn_connect()
 
-        #NOTE: er þetta réttur staður fyrir þennan timestamp?
         fetch_starttime = UTCDateTime()
         data_starttime = fetch_starttime - 60
-
-        #TODO:  The station regex isn't consistent with the config, so what do we do?
-        #       Maybe we just don't have a station regex and always ask for all stations and then just exclude
-        #       the once in on the blacklist?
 
         stations_in_network = []
 
         try:
             logging.info("Fetching metadata inventory...")
+            #NOTE: the station regex here isn't the same as for the seedlink connection...
             metadata = self.fdsn.get_stations(network=self.config["network"], station="*", starttime=data_starttime, endtime=fetch_starttime)
             self.metadata_inventory = metadata
             self.metadata_inventory.write(self.config["metadata_filename"], format="STATIONXML")
@@ -496,12 +552,12 @@ class program:
                     for i in range(0, len(trace.data)):
                         trace.data[i] /= counts_to_um
                 except Exception as e:
-                    logging.error("No response info found for " + seed_identifier +". Trace will be removed.")
+                    logging.error(seed_identifier + ": " + str(e) + " Trace will be removed.")
                     pre_processed_stations.remove(trace)
             self.response_lock.release()
 
             per_filter_filtered_stations = apply_bandpass_filters(pre_processed_stations, filters)
-            rsam_results = rsam_processing(per_filter_filtered_stations, filters, stations_in_network)
+            rsam_results = rsam_processing(per_filter_filtered_stations, stations_in_network)
 
             logging.info("Rsam calculation duration: " + str(UTCDateTime() - rsam_st))
 
@@ -513,8 +569,20 @@ class program:
 
             if("alert_on" in self.config.config and self.config["alert_on"] == True):
                 try:
+                    def alert_hook():
+                        #ssh sa.pa.alert@eos-alert-p01 "~/eos-alert-p01/bin/play_tremv"
+                        client = paramiko.SSHClient()
+                        client.load_system_host_keys()
+                        client.connect("eos-alert-p01", username="sa.pa.alert")
+
+                        stdin, stdout, stderr = client.exec_command("~/eos-alert-p01/bin/play_tremv")
+
+                        output = stdout.readlines()
+                        stdin.close()
+                        client.close()
+
                     # Runs tremv_alert module
-                    alert.main(data_starttime, filters, station_channel)
+                    alert.main(data_starttime, filters, station_channel, alert_hook)
                 except Exception as e:
                     logging.error("Alert module could not be run.")
                     logging.error(e)
