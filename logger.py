@@ -570,19 +570,8 @@ class program:
             if("alert_on" in self.config.config and self.config["alert_on"] == True):
                 try:
                     def alert_hook():
-                        #ssh sa.pa.alert@eos-alert-p01 "~/eos-alert-p01/bin/play_tremv"
-                        client = paramiko.SSHClient()
-                        client.load_system_host_keys()
-                        client.connect("eos-alert-p01", username="sa.pa.alert")
-
-                        stdin, stdout, stderr = client.exec_command("~/eos-alert-p01/bin/play_tremv")
-
-                        output = stdout.readlines()
-                        stdin.close()
-                        client.close()
-
                     # Runs tremv_alert module
-                    alert.main(data_starttime, filters, station_channel, alert_hook)
+                    alert.main(data_starttime, filters, station_channel, None)
                 except Exception as e:
                     logging.error("Alert module could not be run.")
                     logging.error(e)
